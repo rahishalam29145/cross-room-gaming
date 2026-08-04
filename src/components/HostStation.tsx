@@ -102,6 +102,11 @@ export default function HostStation() {
   const handleSignal = useCallback(
     async (msg: SignalMessage) => {
       if (msg.type === "guest-hello") {
+        const existing = pcRef.current;
+        if (existing && (existing.connectionState === "connected" || existing.signalingState === "have-local-offer")) {
+          // Already negotiating or live with this guest — ignore the retry.
+          if (existing.connectionState === "connected") return;
+        }
         setGuestState("connecting");
         const pc = buildPeer();
         const offer = await pc.createOffer();
