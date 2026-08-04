@@ -77,11 +77,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "CoOpCast — Retro Co-op Over the Internet" },
+      {
+        name: "description",
+        content:
+          "Host a retro ROM in your browser and let a remote friend see the screen and play as Player 2.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -92,6 +93,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -120,7 +127,24 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div className="min-h-screen">
+        <nav className="border-b border-border">
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
+            <Link to="/" className="font-mono text-sm font-bold tracking-[0.3em] text-primary">
+              CO·OP<span className="text-foreground">CAST</span>
+            </Link>
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <Link to="/host" activeProps={{ className: "text-primary" }}>
+                Host
+              </Link>
+              <Link to="/join" activeProps={{ className: "text-chart-2" }}>
+                Join
+              </Link>
+            </div>
+          </div>
+        </nav>
+        <Outlet />
+      </div>
     </QueryClientProvider>
   );
 }
