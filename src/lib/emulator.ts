@@ -6,15 +6,20 @@ import type { CoreId } from "./retro";
 
 const CDN = "https://cdn.emulatorjs.org/stable/data/";
 
-type EJSWindow = Window &
-  Record<string, unknown> & {
-    EJS_emulator?: {
-      gameManager?: {
-        simulateInput?: (player: number, index: number, value: number) => void;
-      };
-      canvas?: HTMLCanvasElement;
+interface EJSWindow {
+  [key: string]: unknown;
+  AudioContext?: typeof AudioContext;
+  EJS_emulator?: {
+    gameManager?: {
+      simulateInput?: (player: number, index: number, value: number) => void;
     };
+    canvas?: HTMLCanvasElement;
   };
+}
+
+function ejsWindow(): EJSWindow {
+  return window as unknown as EJSWindow;
+}
 
 let audioTapStream: MediaStream | null = null;
 let audioTapInstalled = false;
@@ -45,7 +50,7 @@ export function installAudioTap(): void {
           taps.set(ctx, tap);
           audioTapStream = tap.stream;
         }
-        originalConnect.call(this, tap);
+        (originalConnect as unknown as (n: AudioNode) => void).call(this, tap);
       }
     } catch {
       /* tapping is best-effort; never break playback */
@@ -86,7 +91,7 @@ export async function startEmulator({
   romUrl,
   romName,
 }: StartEmulatorOptions): Promise<void> {
-  const w = window as EJSWindow;
+  const w = ejsWindow();
   installAudioTap();
 
   const mount = document.createElement("div");
@@ -130,7 +135,7 @@ export function waitForCanvas(container: HTMLElement, timeoutMs = 60000): Promis
 
 /** Pushes a remote player's button press into the running emulator. */
 export function sendInputToEmulator(player: number, buttonIndex: number, value: number): void {
-  const w = window as EJSWindow;
+  const w = ejsWindow();
   const gm = w.EJS_emulator?.gameManager;
   if (gm && typeof gm.simulateInput === "function") {
     gm.simulateInput(player, buttonIndex, value);
