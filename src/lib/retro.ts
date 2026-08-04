@@ -83,6 +83,10 @@ export function makeRoomCode(): string {
   return out;
 }
 
+export function sanitizeCode(input: string): string {
+  return input.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+}
+
 export type SignalMessage =
   | { type: "guest-hello" }
   | { type: "offer"; sdp: string }

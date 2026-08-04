@@ -6,7 +6,6 @@ import {
   ICE_SERVERS,
   detectCore,
   makeRoomCode,
-  sanitizeCode,
   type CoreId,
   type InputMessage,
   type SignalMessage,
@@ -297,6 +296,3 @@ export default function HostStation() {
     </div>
   );
 }
-
-// Keep bundlers from tree-shaking the shared helper import used above.
-void sanitizeCode;
