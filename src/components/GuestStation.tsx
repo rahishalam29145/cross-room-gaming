@@ -94,7 +94,17 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
     signalRef.current = createSignalChannel(code, "guest", (msg) => {
       void handleSignal(msg);
     });
-    setTimeout(() => signalRef.current?.send({ type: "guest-hello" }), 600);
+    // Retry until the host's room is live and answers with an offer.
+    let attempts = 0;
+    const hello = setInterval(() => {
+      attempts += 1;
+      if (pcRef.current !== pc || pc.connectionState === "connected" || attempts > 20) {
+        clearInterval(hello);
+        return;
+      }
+      if (!pc.remoteDescription) signalRef.current?.send({ type: "guest-hello" });
+    }, 3000);
+    setTimeout(() => signalRef.current?.send({ type: "guest-hello" }), 800);
   };
 
   useEffect(() => {
