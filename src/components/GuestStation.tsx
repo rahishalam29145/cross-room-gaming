@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Plug, Signal } from "lucide-react";
 import { ICE_SERVERS, sanitizeCode, type InputMessage, type SignalMessage } from "@/lib/retro";
-import { createSignalChannel, waitForIceGathering } from "@/lib/signaling";
+import { createIceRelay, createSignalChannel } from "@/lib/signaling";
 import { TouchGamepad } from "@/components/TouchGamepad";
 
 type Phase = "idle" | "connecting" | "connected" | "failed";
@@ -16,6 +16,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const signalRef = useRef<ReturnType<typeof createSignalChannel> | null>(null);
+  const iceRef = useRef<ReturnType<typeof createIceRelay> | null>(null);
 
   const cleanup = useCallback(() => {
     dcRef.current?.close();
@@ -29,17 +30,22 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
   useEffect(() => cleanup, [cleanup]);
 
   const handleSignal = useCallback(async (msg: SignalMessage) => {
-    if (msg.type !== "offer") {
-      if (msg.type === "host-bye") setPhase("failed");
-      return;
-    }
     const pc = pcRef.current;
     if (!pc) return;
+    if (msg.type === "ice") {
+      await iceRef.current?.addRemote(msg.candidate);
+      return;
+    }
+    if (msg.type === "host-bye") {
+      setPhase("failed");
+      return;
+    }
+    if (msg.type !== "offer") return;
     await pc.setRemoteDescription({ type: "offer", sdp: msg.sdp });
+    await iceRef.current?.flush();
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    await waitForIceGathering(pc);
-    signalRef.current?.send({ type: "answer", sdp: pc.localDescription?.sdp ?? "" });
+    signalRef.current?.send({ type: "answer", sdp: answer.sdp ?? "" });
   }, []);
 
   const connect = () => {
@@ -53,6 +59,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pcRef.current = pc;
+    iceRef.current = createIceRelay(pc, (m) => signalRef.current?.send(m));
 
     pc.ontrack = (event) => {
       const video = videoRef.current;

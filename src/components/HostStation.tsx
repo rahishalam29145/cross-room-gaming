@@ -10,7 +10,7 @@ import {
   type InputMessage,
   type SignalMessage,
 } from "@/lib/retro";
-import { createSignalChannel, waitForIceGathering } from "@/lib/signaling";
+import { createIceRelay, createSignalChannel } from "@/lib/signaling";
 import {
   getTappedAudioTrack,
   sendInputToEmulator,
@@ -36,6 +36,7 @@ export default function HostStation() {
   const streamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const signalRef = useRef<ReturnType<typeof createSignalChannel> | null>(null);
+  const iceRef = useRef<ReturnType<typeof createIceRelay> | null>(null);
   const p2Ref = useRef(true);
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export default function HostStation() {
     teardownPeer();
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pcRef.current = pc;
+    iceRef.current = createIceRelay(pc, (msg) => signalRef.current?.send(msg));
 
     const stream = streamRef.current;
     if (stream) {
@@ -104,12 +106,14 @@ export default function HostStation() {
         const pc = buildPeer();
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        await waitForIceGathering(pc);
-        signalRef.current?.send({ type: "offer", sdp: pc.localDescription?.sdp ?? "" });
+        signalRef.current?.send({ type: "offer", sdp: offer.sdp ?? "" });
       } else if (msg.type === "answer") {
         const pc = pcRef.current;
         if (!pc || pc.signalingState === "stable") return;
         await pc.setRemoteDescription({ type: "answer", sdp: msg.sdp });
+        await iceRef.current?.flush();
+      } else if (msg.type === "ice") {
+        await iceRef.current?.addRemote(msg.candidate);
       } else if (msg.type === "guest-bye") {
         setGuestState("waiting");
         teardownPeer();
