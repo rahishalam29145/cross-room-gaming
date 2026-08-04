@@ -56,3 +56,35 @@ export function waitForIceGathering(pc: RTCPeerConnection): Promise<void> {
     }, 4000);
   });
 }
+
+/**
+ * Trickle-ICE plumbing: forwards local candidates as they appear and buffers
+ * remote candidates that arrive before the remote description is applied.
+ */
+export function createIceRelay(
+  pc: RTCPeerConnection,
+  send: (msg: { type: "ice"; candidate: RTCIceCandidateInit }) => void,
+) {
+  const pending: RTCIceCandidateInit[] = [];
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) send({ type: "ice", candidate: event.candidate.toJSON() });
+  };
+
+  const flush = async () => {
+    while (pending.length) {
+      const candidate = pending.shift();
+      if (candidate) await pc.addIceCandidate(candidate).catch(() => undefined);
+    }
+  };
+
+  const addRemote = async (candidate: RTCIceCandidateInit) => {
+    if (!pc.remoteDescription) {
+      pending.push(candidate);
+      return;
+    }
+    await pc.addIceCandidate(candidate).catch(() => undefined);
+  };
+
+  return { addRemote, flush };
+}

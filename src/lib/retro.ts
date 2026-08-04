@@ -90,6 +90,7 @@ export function sanitizeCode(input: string): string {
 export type SignalMessage =
   | { type: "guest-hello" }
   | { type: "offer"; sdp: string }
+  | { type: "ice"; candidate: RTCIceCandidateInit }
   | { type: "answer"; sdp: string }
   | { type: "host-bye" }
   | { type: "guest-bye" };
