@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Host a retro game from your browser and stream it to a remote Player 2 with live controls. No game file needed on their side.",
+          "Upload a retro ROM in your browser, share a room code, and let a friend thousands of km away see the screen and play as Player 2.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

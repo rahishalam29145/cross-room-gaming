@@ -77,15 +77,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CoOpCast — Retro Co-op Over the Internet" },
+      { title: "CoOpCast — Retro ROM Multiplayer Over the Internet" },
       {
         name: "description",
         content:
-          "Host a retro ROM in your browser and let a remote friend see the screen and play as Player 2.",
+          "Upload a retro ROM in your browser, share a room code, and let a friend thousands of km away see the screen and play as Player 2.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { property: "og:title", content: "CoOpCast — Retro ROM Multiplayer Over the Internet" },
+      { name: "twitter:title", content: "CoOpCast — Retro ROM Multiplayer Over the Internet" },
+      { property: "og:description", content: "Upload a retro ROM in your browser, share a room code, and let a friend thousands of km away see the screen and play as Player 2." },
+      { name: "twitter:description", content: "Upload a retro ROM in your browser, share a room code, and let a friend thousands of km away see the screen and play as Player 2." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6b5e678c-3676-4dc3-a3a2-48b5d2dc12a2" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6b5e678c-3676-4dc3-a3a2-48b5d2dc12a2" },
     ],
     links: [
       {
