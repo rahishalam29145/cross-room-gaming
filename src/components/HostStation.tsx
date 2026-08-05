@@ -132,17 +132,29 @@ export default function HostStation() {
     if (!file || !core || !containerRef.current) return;
     setPhase("booting");
     setError(null);
+    setProgress({ label: "ROM cache ho rahi hai…", value: 0 });
     try {
-      const romUrl = URL.createObjectURL(file);
-      await startEmulator({
-        container: containerRef.current,
-        core,
-        romUrl,
-        romName: file.name,
-      });
+      // Big romsets are streamed into IndexedDB in slices, so a 200MB+ zip
+      // never has to sit in one giant ArrayBuffer while the core boots.
+      let rom = file;
+      try {
+        const meta = await saveRom(file, (f) =>
+          setProgress({ label: "ROM cache ho rahi hai…", value: f }),
+        );
+        rom = await loadRom(meta, (f) =>
+          setProgress({ label: "ROM emulator me ja rahi hai…", value: f }),
+        );
+        setSavedRoms(await listRoms());
+      } catch {
+        // Storage full / private mode — fall back to the in-memory File.
+        rom = file;
+      }
+
+      setProgress({ label: "Core boot ho raha hai…", value: null });
+      await startEmulator({ container: containerRef.current, core, rom });
       const canvas = await waitForCanvas(containerRef.current);
 
-      const stream = (canvas as HTMLCanvasElement).captureStream(30);
+      const stream = (canvas as HTMLCanvasElement).captureStream(60);
       const audioTrack = getTappedAudioTrack();
       if (audioTrack) stream.addTrack(audioTrack);
       streamRef.current = stream;
@@ -151,12 +163,15 @@ export default function HostStation() {
         void handleSignal(msg);
       });
       void publishRoom({ code: roomCode, gameName: file.name, core });
+      setProgress(null);
       setPhase("live");
     } catch (e) {
       setPhase("idle");
+      setProgress(null);
       setError(e instanceof Error ? e.message : "Emulator start nahi ho paya.");
     }
   };
+
 
   // Keep the room visible in the public lobby while we're live.
   useEffect(() => {
