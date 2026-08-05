@@ -12,6 +12,23 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
   const [phase, setPhase] = useState<Phase>("idle");
   const [latency, setLatency] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<LobbyRoom[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+
+  const refreshRooms = useCallback(async () => {
+    setLoadingRooms(true);
+    try {
+      setRooms(await listOpenRooms());
+    } finally {
+      setLoadingRooms(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshRooms();
+    const id = setInterval(() => void refreshRooms(), 10000);
+    return () => clearInterval(id);
+  }, [refreshRooms]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
