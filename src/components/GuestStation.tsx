@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Plug, Signal } from "lucide-react";
-import { ICE_SERVERS, sanitizeCode, type InputMessage, type SignalMessage } from "@/lib/retro";
+import { Loader2, Plug, RefreshCw, Signal, Users } from "lucide-react";
+import { ICE_SERVERS, sanitizeCode, CORE_LABELS, type CoreId, type InputMessage, type SignalMessage } from "@/lib/retro";
 import { createIceRelay, createSignalChannel } from "@/lib/signaling";
+import { listOpenRooms, type LobbyRoom } from "@/lib/rooms";
 import { TouchGamepad } from "@/components/TouchGamepad";
 
 type Phase = "idle" | "connecting" | "connected" | "failed";
@@ -11,6 +12,23 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
   const [phase, setPhase] = useState<Phase>("idle");
   const [latency, setLatency] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<LobbyRoom[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+
+  const refreshRooms = useCallback(async () => {
+    setLoadingRooms(true);
+    try {
+      setRooms(await listOpenRooms());
+    } finally {
+      setLoadingRooms(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshRooms();
+    const id = setInterval(() => void refreshRooms(), 10000);
+    return () => clearInterval(id);
+  }, [refreshRooms]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -48,14 +66,16 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
     signalRef.current?.send({ type: "answer", sdp: answer.sdp ?? "" });
   }, []);
 
-  const connect = () => {
-    if (code.length < 4) {
+  const connect = (joinCode: string = code) => {
+    if (joinCode.length < 4) {
       setError("Poora room code daaliye.");
       return;
     }
+    setCode(joinCode);
     setError(null);
     setPhase("connecting");
     cleanup();
+
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pcRef.current = pc;
@@ -91,7 +111,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
       }
     };
 
-    signalRef.current = createSignalChannel(code, "guest", (msg) => {
+    signalRef.current = createSignalChannel(joinCode, "guest", (msg) => {
       void handleSignal(msg);
     });
     // Retry until the host's room is live and answers with an offer.
@@ -139,7 +159,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
               className="flex-1 rounded-md border border-border bg-background px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] text-foreground placeholder:text-muted-foreground"
             />
             <button
-              onClick={connect}
+              onClick={() => connect()}
               disabled={phase === "connecting"}
               className="inline-flex items-center gap-2 rounded-md bg-chart-2 px-6 py-3 text-sm font-semibold text-background disabled:opacity-40"
             >
@@ -157,6 +177,60 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
           </p>
         </section>
       )}
+
+      {phase !== "connected" && (
+        <section className="mt-4 rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-mono text-sm tracking-[0.25em] text-primary">LIVE ROOMS</h2>
+            <button
+              onClick={() => void refreshRooms()}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loadingRooms ? "animate-spin" : ""}`} aria-hidden />
+              Refresh
+            </button>
+          </div>
+
+          {rooms.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Abhi koi room live nahi hai. Code milte hi upar daal dijiye.
+            </p>
+          ) : (
+            <ul className="mt-4 grid gap-2">
+              {rooms.map((room) => (
+                <li
+                  key={room.code}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 p-3"
+                >
+                  <span className="font-mono text-lg font-bold tracking-[0.25em] text-primary">
+                    {room.code}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-foreground">{room.game_name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {CORE_LABELS[room.core as CoreId] ?? room.core}
+                    </span>
+                  </span>
+                  {room.p2_taken ? (
+                    <span className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" aria-hidden /> FULL
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => connect(room.code)}
+                      disabled={phase === "connecting"}
+                      className="rounded-md bg-chart-2 px-4 py-2 text-xs font-semibold text-background disabled:opacity-40"
+                    >
+                      Join
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
 
       <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-xl border border-border bg-black">
         <video

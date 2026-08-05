@@ -11,6 +11,7 @@ import {
   type SignalMessage,
 } from "@/lib/retro";
 import { createIceRelay, createSignalChannel } from "@/lib/signaling";
+import { heartbeatRoom, publishRoom, removeRoom } from "@/lib/rooms";
 import {
   getTappedAudioTrack,
   sendInputToEmulator,
@@ -149,6 +150,7 @@ export default function HostStation() {
       signalRef.current = createSignalChannel(roomCode, "host", (msg) => {
         void handleSignal(msg);
       });
+      void publishRoom({ code: roomCode, gameName: file.name, core });
       setPhase("live");
     } catch (e) {
       setPhase("idle");
@@ -156,14 +158,26 @@ export default function HostStation() {
     }
   };
 
+  // Keep the room visible in the public lobby while we're live.
+  useEffect(() => {
+    if (phase !== "live") return;
+    const id = setInterval(() => {
+      void heartbeatRoom(roomCode, guestState === "connected");
+    }, 20000);
+    void heartbeatRoom(roomCode, guestState === "connected");
+    return () => clearInterval(id);
+  }, [phase, roomCode, guestState]);
+
   useEffect(() => {
     return () => {
       signalRef.current?.send({ type: "host-bye" });
       signalRef.current?.close();
       pcRef.current?.close();
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      void removeRoom(roomCode);
     };
-  }, []);
+  }, [roomCode]);
+
 
   const shareLink =
     typeof window !== "undefined" ? `${window.location.origin}/join?code=${roomCode}` : "";
@@ -229,6 +243,17 @@ export default function HostStation() {
               </button>
             </div>
           )}
+
+          {file && (core === "arcade" || core === "mame2003") && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Arcade tip: ZIP ko unzip mat karein — MAME/FBNeo romset zip hi chahiye (jaise{" "}
+              <span className="font-mono">dino.zip</span>,{" "}
+              <span className="font-mono">tektagt.zip</span>). Agar game boot na ho to doosra arcade
+              core try karein — purani romsets MAME 2003 par chalti hain, nayi FinalBurn Neo par.
+              Neo Geo / CPS3 games ke liye BIOS zip bhi usi folder ka hona chahiye.
+            </p>
+          )}
+
 
           {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
         </section>

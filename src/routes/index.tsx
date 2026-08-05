@@ -1,5 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
+import { Suspense, lazy } from "react";
 import { Gamepad2, Radio, ShieldCheck, Wifi } from "lucide-react";
+
+const LobbyList = lazy(() => import("@/components/LobbyList"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -53,6 +56,13 @@ function Home() {
           </Link>
         </div>
       </section>
+
+      <ClientOnly fallback={null}>
+        <Suspense fallback={null}>
+          <LobbyList />
+        </Suspense>
+      </ClientOnly>
+
 
       <section className="mt-10 grid gap-4 sm:grid-cols-3">
         <Feature
