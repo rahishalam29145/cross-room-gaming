@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Plug, Signal } from "lucide-react";
-import { ICE_SERVERS, sanitizeCode, type InputMessage, type SignalMessage } from "@/lib/retro";
+import { Loader2, Plug, RefreshCw, Signal, Users } from "lucide-react";
+import { ICE_SERVERS, sanitizeCode, CORE_LABELS, type CoreId, type InputMessage, type SignalMessage } from "@/lib/retro";
 import { createIceRelay, createSignalChannel } from "@/lib/signaling";
+import { listOpenRooms, type LobbyRoom } from "@/lib/rooms";
 import { TouchGamepad } from "@/components/TouchGamepad";
 
 type Phase = "idle" | "connecting" | "connected" | "failed";
