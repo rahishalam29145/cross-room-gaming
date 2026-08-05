@@ -11,6 +11,7 @@ import {
   type SignalMessage,
 } from "@/lib/retro";
 import { createIceRelay, createSignalChannel } from "@/lib/signaling";
+import { heartbeatRoom, publishRoom, removeRoom } from "@/lib/rooms";
 import {
   getTappedAudioTrack,
   sendInputToEmulator,
