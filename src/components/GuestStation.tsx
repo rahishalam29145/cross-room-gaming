@@ -3,7 +3,7 @@ import { Loader2, Plug, RefreshCw, Signal, Users } from "lucide-react";
 import { ICE_SERVERS, sanitizeCode, CORE_LABELS, type CoreId, type InputMessage, type SignalMessage } from "@/lib/retro";
 import { createIceRelay, createSignalChannel } from "@/lib/signaling";
 import { listOpenRooms, type LobbyRoom } from "@/lib/rooms";
-import { TouchGamepad } from "@/components/TouchGamepad";
+import { CustomGamepad } from "@/components/CustomGamepad";
 
 type Phase = "idle" | "connecting" | "connected" | "failed";
 
@@ -254,7 +254,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
       )}
 
       <div className="mt-6">
-        <TouchGamepad onButton={sendButton} disabled={phase !== "connected"} />
+        <CustomGamepad onButton={sendButton} disabled={phase !== "connected"} />
       </div>
     </div>
   );

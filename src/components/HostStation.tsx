@@ -18,6 +18,14 @@ import {
   startEmulator,
   waitForCanvas,
 } from "@/lib/emulator";
+import {
+  deleteRom,
+  formatSize,
+  listRoms,
+  loadRom,
+  saveRom,
+  type RomMeta,
+} from "@/lib/romStore";
 
 type Phase = "idle" | "booting" | "live";
 
@@ -32,6 +40,13 @@ export default function HostStation() {
   );
   const [p2Enabled, setP2Enabled] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [progress, setProgress] = useState<{ label: string; value: number | null } | null>(null);
+  const [savedRoms, setSavedRoms] = useState<RomMeta[]>([]);
+
+  useEffect(() => {
+    void listRoms().then(setSavedRoms);
+  }, []);
+
 
   const containerRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -69,8 +84,21 @@ export default function HostStation() {
 
     const stream = streamRef.current;
     if (stream) {
-      for (const track of stream.getTracks()) pc.addTrack(track, stream);
+      for (const track of stream.getTracks()) {
+        const sender = pc.addTrack(track, stream);
+        if (track.kind !== "video") continue;
+        // Favour frame rate over resolution so gameplay stays at 60 FPS.
+        try {
+          const params = sender.getParameters();
+          params.degradationPreference = "maintain-framerate";
+          params.encodings = [{ maxBitrate: 6_000_000, maxFramerate: 60, networkPriority: "high" }];
+          void sender.setParameters(params);
+        } catch {
+          /* older browsers ignore encoder hints */
+        }
+      }
     }
+
 
     const channel = pc.createDataChannel("controls", {
       ordered: false,
@@ -132,17 +160,29 @@ export default function HostStation() {
     if (!file || !core || !containerRef.current) return;
     setPhase("booting");
     setError(null);
+    setProgress({ label: "ROM cache ho rahi hai…", value: 0 });
     try {
-      const romUrl = URL.createObjectURL(file);
-      await startEmulator({
-        container: containerRef.current,
-        core,
-        romUrl,
-        romName: file.name,
-      });
+      // Big romsets are streamed into IndexedDB in slices, so a 200MB+ zip
+      // never has to sit in one giant ArrayBuffer while the core boots.
+      let rom = file;
+      try {
+        const meta = await saveRom(file, (f) =>
+          setProgress({ label: "ROM cache ho rahi hai…", value: f }),
+        );
+        rom = await loadRom(meta, (f) =>
+          setProgress({ label: "ROM emulator me ja rahi hai…", value: f }),
+        );
+        setSavedRoms(await listRoms());
+      } catch {
+        // Storage full / private mode — fall back to the in-memory File.
+        rom = file;
+      }
+
+      setProgress({ label: "Core boot ho raha hai…", value: null });
+      await startEmulator({ container: containerRef.current, core, rom });
       const canvas = await waitForCanvas(containerRef.current);
 
-      const stream = (canvas as HTMLCanvasElement).captureStream(30);
+      const stream = (canvas as HTMLCanvasElement).captureStream(60);
       const audioTrack = getTappedAudioTrack();
       if (audioTrack) stream.addTrack(audioTrack);
       streamRef.current = stream;
@@ -151,12 +191,15 @@ export default function HostStation() {
         void handleSignal(msg);
       });
       void publishRoom({ code: roomCode, gameName: file.name, core });
+      setProgress(null);
       setPhase("live");
     } catch (e) {
       setPhase("idle");
+      setProgress(null);
       setError(e instanceof Error ? e.message : "Emulator start nahi ho paya.");
     }
   };
+
 
   // Keep the room visible in the public lobby while we're live.
   useEffect(() => {
@@ -218,7 +261,73 @@ export default function HostStation() {
             />
           </label>
 
+
+          {progress && (
+            <div className="mt-4">
+              <p className="font-mono text-xs text-muted-foreground">
+                {progress.label}
+                {progress.value !== null ? ` ${Math.round(progress.value * 100)}%` : ""}
+              </p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full bg-primary ${progress.value === null ? "w-1/3 animate-pulse" : ""}`}
+                  style={progress.value !== null ? { width: `${progress.value * 100}%` } : undefined}
+                />
+              </div>
+            </div>
+          )}
+
+          {savedRoms.length > 0 && (
+            <div className="mt-5">
+              <p className="font-mono text-xs tracking-[0.25em] text-muted-foreground">
+                SAVED ROMS (browser me cached)
+              </p>
+              <ul className="mt-2 grid gap-2">
+                {savedRoms.map((meta) => (
+                  <li
+                    key={meta.id}
+                    className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 p-2.5"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{meta.name}</span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {formatSize(meta.size)}
+                    </span>
+                    <button
+                      onClick={async () => {
+                        setProgress({ label: "Cached ROM load ho rahi hai…", value: 0 });
+                        try {
+                          const rom = await loadRom(meta, (f) =>
+                            setProgress({ label: "Cached ROM load ho rahi hai…", value: f }),
+                          );
+                          pickFile(rom);
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : "ROM load nahi hui.");
+                        } finally {
+                          setProgress(null);
+                        }
+                      }}
+                      className="rounded-md border border-primary px-3 py-1.5 text-xs text-primary"
+                    >
+                      Use
+                    </button>
+                    <button
+                      aria-label={`Delete ${meta.name}`}
+                      onClick={async () => {
+                        await deleteRom(meta);
+                        setSavedRoms(await listRoms());
+                      }}
+                      className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground"
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {file && (
+
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <span className="font-mono text-xs text-muted-foreground">CONSOLE</span>
               <select

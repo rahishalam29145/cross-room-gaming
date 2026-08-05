@@ -81,16 +81,15 @@ function loadLoaderScript(): Promise<void> {
 export interface StartEmulatorOptions {
   container: HTMLDivElement;
   core: CoreId;
-  romUrl: string;
-  romName: string;
+  /**
+   * The ROM as a File. Passing the File (instead of a blob: URL) is essential:
+   * arcade cores derive the romset name from the file name, and a blob URL
+   * makes EmulatorJS fall back to "game" → "Romset is unknown".
+   */
+  rom: File;
 }
 
-export async function startEmulator({
-  container,
-  core,
-  romUrl,
-  romName,
-}: StartEmulatorOptions): Promise<void> {
+export async function startEmulator({ container, core, rom }: StartEmulatorOptions): Promise<void> {
   const w = ejsWindow();
   installAudioTap();
 
@@ -104,17 +103,22 @@ export async function startEmulator({
   w["EJS_player"] = `#${mount.id}`;
   w["EJS_core"] = core;
   w["EJS_pathtodata"] = CDN;
-  w["EJS_gameUrl"] = romUrl;
-  w["EJS_gameName"] = romName;
+  w["EJS_gameUrl"] = rom;
+  w["EJS_gameName"] = rom.name.replace(/\.[^.]+$/, "");
+  w["EJS_gameID"] = rom.name;
   w["EJS_startOnLoaded"] = true;
   w["EJS_volume"] = 0.5;
+  // Multi-threaded cores only work when the page is cross-origin isolated;
+  // enabling them elsewhere hard-fails the core boot.
+  w["EJS_threads"] = typeof window !== "undefined" && window.crossOriginIsolated === true;
+  w["EJS_defaultOptions"] = { rewindEnabled: "disabled", "save-state-location": "browser" };
   w["EJS_Buttons"] = { cacheManager: false, saveState: true, loadState: true };
 
   await loadLoaderScript();
 }
 
 /** Waits for the emulator canvas to exist and have real pixels. */
-export function waitForCanvas(container: HTMLElement, timeoutMs = 60000): Promise<HTMLCanvasElement> {
+export function waitForCanvas(container: HTMLElement, timeoutMs = 300000): Promise<HTMLCanvasElement> {
   return new Promise((resolve, reject) => {
     const started = Date.now();
     const tick = () => {
