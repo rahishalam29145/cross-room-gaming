@@ -149,6 +149,7 @@ export default function HostStation() {
       signalRef.current = createSignalChannel(roomCode, "host", (msg) => {
         void handleSignal(msg);
       });
+      void publishRoom({ code: roomCode, gameName: file.name, core });
       setPhase("live");
     } catch (e) {
       setPhase("idle");
@@ -156,14 +157,26 @@ export default function HostStation() {
     }
   };
 
+  // Keep the room visible in the public lobby while we're live.
+  useEffect(() => {
+    if (phase !== "live") return;
+    const id = setInterval(() => {
+      void heartbeatRoom(roomCode, guestState === "connected");
+    }, 20000);
+    void heartbeatRoom(roomCode, guestState === "connected");
+    return () => clearInterval(id);
+  }, [phase, roomCode, guestState]);
+
   useEffect(() => {
     return () => {
       signalRef.current?.send({ type: "host-bye" });
       signalRef.current?.close();
       pcRef.current?.close();
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      void removeRoom(roomCode);
     };
-  }, []);
+  }, [roomCode]);
+
 
   const shareLink =
     typeof window !== "undefined" ? `${window.location.origin}/join?code=${roomCode}` : "";
