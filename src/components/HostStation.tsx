@@ -18,6 +18,14 @@ import {
   startEmulator,
   waitForCanvas,
 } from "@/lib/emulator";
+import {
+  deleteRom,
+  formatSize,
+  listRoms,
+  loadRom,
+  saveRom,
+  type RomMeta,
+} from "@/lib/romStore";
 
 type Phase = "idle" | "booting" | "live";
 
@@ -32,6 +40,13 @@ export default function HostStation() {
   );
   const [p2Enabled, setP2Enabled] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [progress, setProgress] = useState<{ label: string; value: number | null } | null>(null);
+  const [savedRoms, setSavedRoms] = useState<RomMeta[]>([]);
+
+  useEffect(() => {
+    void listRoms().then(setSavedRoms);
+  }, []);
+
 
   const containerRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
