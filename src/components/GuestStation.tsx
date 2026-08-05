@@ -93,7 +93,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
       }
     };
 
-    signalRef.current = createSignalChannel(code, "guest", (msg) => {
+    signalRef.current = createSignalChannel(joinCode, "guest", (msg) => {
       void handleSignal(msg);
     });
     // Retry until the host's room is live and answers with an offer.
