@@ -244,6 +244,17 @@ export default function HostStation() {
             </div>
           )}
 
+          {file && (core === "arcade" || core === "mame2003") && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Arcade tip: ZIP ko unzip mat karein — MAME/FBNeo romset zip hi chahiye (jaise{" "}
+              <span className="font-mono">dino.zip</span>,{" "}
+              <span className="font-mono">tektagt.zip</span>). Agar game boot na ho to doosra arcade
+              core try karein — purani romsets MAME 2003 par chalti hain, nayi FinalBurn Neo par.
+              Neo Geo / CPS3 games ke liye BIOS zip bhi usi folder ka hona chahiye.
+            </p>
+          )}
+
+
           {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
         </section>
       )}
