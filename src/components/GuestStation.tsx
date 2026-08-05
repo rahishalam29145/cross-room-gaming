@@ -141,7 +141,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
               className="flex-1 rounded-md border border-border bg-background px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] text-foreground placeholder:text-muted-foreground"
             />
             <button
-              onClick={connect}
+              onClick={() => connect()}
               disabled={phase === "connecting"}
               className="inline-flex items-center gap-2 rounded-md bg-chart-2 px-6 py-3 text-sm font-semibold text-background disabled:opacity-40"
             >
