@@ -9,9 +9,14 @@ export type CoreId =
   | "segaMD"
   | "n64"
   | "psx"
-  | "segaMS";
+  | "segaMS"
+  | "arcade"
+  | "mame2003";
 
 export const CORE_LABELS: Record<CoreId, string> = {
+  arcade: "Arcade — FinalBurn Neo (Dino, Tekken Tag, CPS1/2/3, Neo Geo)",
+  mame2003: "Arcade — MAME 2003 (purani MAME romsets)",
+  psx: "PlayStation 1 (Tekken 3, etc.)",
   nes: "NES / Famicom",
   snes: "SNES",
   gba: "Game Boy Advance",
@@ -19,10 +24,11 @@ export const CORE_LABELS: Record<CoreId, string> = {
   segaMD: "Sega Genesis / Mega Drive",
   segaMS: "Sega Master System",
   n64: "Nintendo 64",
-  psx: "PlayStation 1",
 };
 
 const EXT_TO_CORE: Record<string, CoreId> = {
+  zip: "arcade",
+  "7z": "arcade",
   nes: "nes",
   fds: "nes",
   unf: "nes",
@@ -36,7 +42,7 @@ const EXT_TO_CORE: Record<string, CoreId> = {
   md: "segaMD",
   gen: "segaMD",
   smd: "segaMD",
-  bin: "segaMD",
+  bin: "psx",
   sms: "segaMS",
   z64: "n64",
   n64: "n64",
@@ -44,6 +50,9 @@ const EXT_TO_CORE: Record<string, CoreId> = {
   cue: "psx",
   pbp: "psx",
   chd: "psx",
+  iso: "psx",
+  img: "psx",
+  mdf: "psx",
 };
 
 export function detectCore(fileName: string): CoreId | null {
@@ -53,8 +62,8 @@ export function detectCore(fileName: string): CoreId | null {
 
 export const ACCEPTED_EXTENSIONS = Object.keys(EXT_TO_CORE)
   .map((e) => `.${e}`)
-  .concat(".zip")
   .join(",");
+
 
 /** RetroArch joypad button indices used by EmulatorJS `simulateInput`. */
 export const BTN = {
