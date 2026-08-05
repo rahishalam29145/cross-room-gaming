@@ -1,5 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
+import { Suspense, lazy } from "react";
 import { Gamepad2, Radio, ShieldCheck, Wifi } from "lucide-react";
+
+const LobbyList = lazy(() => import("@/components/LobbyList"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
