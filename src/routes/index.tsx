@@ -57,6 +57,13 @@ function Home() {
         </div>
       </section>
 
+      <ClientOnly fallback={null}>
+        <Suspense fallback={null}>
+          <LobbyList />
+        </Suspense>
+      </ClientOnly>
+
+
       <section className="mt-10 grid gap-4 sm:grid-cols-3">
         <Feature
           icon={<ShieldCheck className="h-5 w-5 text-primary" aria-hidden />}
