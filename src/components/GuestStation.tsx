@@ -48,14 +48,16 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
     signalRef.current?.send({ type: "answer", sdp: answer.sdp ?? "" });
   }, []);
 
-  const connect = () => {
-    if (code.length < 4) {
+  const connect = (joinCode: string = code) => {
+    if (joinCode.length < 4) {
       setError("Poora room code daaliye.");
       return;
     }
+    setCode(joinCode);
     setError(null);
     setPhase("connecting");
     cleanup();
+
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pcRef.current = pc;
