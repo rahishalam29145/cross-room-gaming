@@ -261,7 +261,73 @@ export default function HostStation() {
             />
           </label>
 
+
+          {progress && (
+            <div className="mt-4">
+              <p className="font-mono text-xs text-muted-foreground">
+                {progress.label}
+                {progress.value !== null ? ` ${Math.round(progress.value * 100)}%` : ""}
+              </p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full bg-primary ${progress.value === null ? "w-1/3 animate-pulse" : ""}`}
+                  style={progress.value !== null ? { width: `${progress.value * 100}%` } : undefined}
+                />
+              </div>
+            </div>
+          )}
+
+          {savedRoms.length > 0 && (
+            <div className="mt-5">
+              <p className="font-mono text-xs tracking-[0.25em] text-muted-foreground">
+                SAVED ROMS (browser me cached)
+              </p>
+              <ul className="mt-2 grid gap-2">
+                {savedRoms.map((meta) => (
+                  <li
+                    key={meta.id}
+                    className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 p-2.5"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{meta.name}</span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {formatSize(meta.size)}
+                    </span>
+                    <button
+                      onClick={async () => {
+                        setProgress({ label: "Cached ROM load ho rahi hai…", value: 0 });
+                        try {
+                          const rom = await loadRom(meta, (f) =>
+                            setProgress({ label: "Cached ROM load ho rahi hai…", value: f }),
+                          );
+                          pickFile(rom);
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : "ROM load nahi hui.");
+                        } finally {
+                          setProgress(null);
+                        }
+                      }}
+                      className="rounded-md border border-primary px-3 py-1.5 text-xs text-primary"
+                    >
+                      Use
+                    </button>
+                    <button
+                      aria-label={`Delete ${meta.name}`}
+                      onClick={async () => {
+                        await deleteRom(meta);
+                        setSavedRoms(await listRoms());
+                      }}
+                      className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground"
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {file && (
+
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <span className="font-mono text-xs text-muted-foreground">CONSOLE</span>
               <select
