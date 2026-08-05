@@ -84,8 +84,21 @@ export default function HostStation() {
 
     const stream = streamRef.current;
     if (stream) {
-      for (const track of stream.getTracks()) pc.addTrack(track, stream);
+      for (const track of stream.getTracks()) {
+        const sender = pc.addTrack(track, stream);
+        if (track.kind !== "video") continue;
+        // Favour frame rate over resolution so gameplay stays at 60 FPS.
+        try {
+          const params = sender.getParameters();
+          params.degradationPreference = "maintain-framerate";
+          params.encodings = [{ maxBitrate: 6_000_000, maxFramerate: 60, networkPriority: "high" }];
+          void sender.setParameters(params);
+        } catch {
+          /* older browsers ignore encoder hints */
+        }
+      }
     }
+
 
     const channel = pc.createDataChannel("controls", {
       ordered: false,
