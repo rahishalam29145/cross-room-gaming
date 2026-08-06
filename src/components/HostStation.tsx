@@ -388,15 +388,83 @@ export default function HostStation() {
             </div>
           )}
 
+          <div className="mt-5 rounded-lg border border-border bg-muted/20 p-4">
+            <p className="font-mono text-xs tracking-[0.25em] text-muted-foreground">
+              BIOS (PS1 / Neo Geo / CPS3)
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-xs text-foreground hover:border-primary hover:text-primary">
+                <Upload className="h-3.5 w-3.5" aria-hidden />
+                BIOS file upload karein
+                <input
+                  type="file"
+                  accept=".bin,.zip,.rom,.img"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setProgress({ label: "BIOS save ho rahi hai…", value: 0 });
+                    try {
+                      const meta = await saveRom(
+                        f,
+                        (v) => setProgress({ label: "BIOS save ho rahi hai…", value: v }),
+                        "bios",
+                      );
+                      setSavedBios(await listRoms("bios"));
+                      setBiosId(meta.id);
+                    } catch {
+                      setError("BIOS save nahi ho payi — storage full ho sakti hai.");
+                    } finally {
+                      setProgress(null);
+                    }
+                  }}
+                />
+              </label>
+              {savedBios.length > 0 && (
+                <select
+                  value={biosId}
+                  onChange={(e) => setBiosId(e.target.value)}
+                  className="rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground"
+                >
+                  <option value="">BIOS ke bina chalayein</option>
+                  {savedBios.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} · {formatSize(b.size)}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {savedBios.length > 0 && biosId && (
+                <button
+                  onClick={async () => {
+                    const meta = savedBios.find((b) => b.id === biosId);
+                    if (!meta) return;
+                    await deleteRom(meta);
+                    const rest = await listRoms("bios");
+                    setSavedBios(rest);
+                    setBiosId(rest[0]?.id ?? "");
+                  }}
+                  className="rounded-md border border-border px-3 py-2 text-xs text-muted-foreground"
+                >
+                  Delete BIOS
+                </button>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              PS1 games ke liye <span className="font-mono">scph1001.bin</span> jaisi BIOS chahiye.
+              Ek baar upload karne ke baad refresh ke baad bhi yahin rahegi.
+            </p>
+          </div>
+
           {file && /\.(zip|7z)$/i.test(file.name) && (
             <p className="mt-3 text-xs text-muted-foreground">
               Arcade tip: ZIP ko unzip mat karein — MAME/FBNeo romset zip hi chahiye (jaise{" "}
               <span className="font-mono">dino.zip</span>,{" "}
               <span className="font-mono">tektagt.zip</span>). Agar game boot na ho to doosra arcade
               core try karein — purani romsets MAME 2003 par chalti hain, nayi FinalBurn Neo par.
-              Neo Geo / CPS3 games ke liye BIOS zip bhi usi folder ka hona chahiye.
             </p>
           )}
+
 
 
           {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
