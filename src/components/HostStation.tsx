@@ -362,8 +362,28 @@ export default function HostStation() {
           )}
 
           {file && (
+            <div className="mt-5 flex items-center gap-4 rounded-lg border border-border bg-muted/20 p-3">
+              <img
+                src={coverForGame(file.name)}
+                alt={`${prettyGameName(file.name)} cover art`}
+                className="h-20 w-20 rounded-md object-cover"
+                loading="lazy"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold text-foreground">
+                  {prettyGameName(file.name)}
+                </p>
+                <p className="font-mono text-xs text-muted-foreground">
+                  {file.name} · {formatSize(file.size)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {file && (
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
+
               <span className="font-mono text-xs text-muted-foreground">CONSOLE</span>
               <select
                 value={core ?? ""}
