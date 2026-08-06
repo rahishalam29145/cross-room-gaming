@@ -49,6 +49,7 @@ function Home() {
           </Link>
           <Link
             to="/join"
+            search={{ code: "" }}
             className="inline-flex items-center gap-2 rounded-md border border-chart-2 px-6 py-3 text-sm font-semibold text-chart-2 transition-colors hover:bg-chart-2/10"
           >
             <Gamepad2 className="h-4 w-4" aria-hidden />

@@ -143,7 +143,7 @@ function RootComponent() {
               <Link to="/host" activeProps={{ className: "text-primary" }}>
                 Host
               </Link>
-              <Link to="/join" activeProps={{ className: "text-chart-2" }}>
+              <Link to="/join" search={{ code: "" }} activeProps={{ className: "text-chart-2" }}>
                 Join
               </Link>
             </div>
