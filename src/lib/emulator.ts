@@ -66,17 +66,22 @@ export function getTappedAudioTrack(): MediaStreamTrack | null {
 
 let loaderPromise: Promise<void> | null = null;
 
+/**
+ * Loads (or reloads) the EmulatorJS bootstrap script. A fresh script element is
+ * appended on every start so switching cores can re-boot cleanly.
+ */
 function loadLoaderScript(): Promise<void> {
-  if (loaderPromise) return loaderPromise;
   loaderPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = `${CDN}loader.js`;
+    script.async = true;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error("Emulator core loader could not be downloaded."));
     document.body.appendChild(script);
   });
   return loaderPromise;
 }
+
 
 export interface StartEmulatorOptions {
   container: HTMLDivElement;
