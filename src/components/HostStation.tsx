@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Gamepad2, Radio, Upload, Users, Volume2, WifiOff } from "lucide-react";
+import { Cpu, Gamepad2, Radio, Upload, Users, Volume2, WifiOff } from "lucide-react";
 import {
   ACCEPTED_EXTENSIONS,
   CORE_LABELS,
@@ -14,6 +14,7 @@ import {
 } from "@/lib/retro";
 import { createIceRelay, createSignalChannel } from "@/lib/signaling";
 import { heartbeatRoom, publishRoom, removeRoom } from "@/lib/rooms";
+import { coverForGame, prettyGameName } from "@/lib/covers";
 import {
   getTappedAudioTrack,
   sendInputToEmulator,
@@ -44,10 +45,18 @@ export default function HostStation() {
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState<{ label: string; value: number | null } | null>(null);
   const [savedRoms, setSavedRoms] = useState<RomMeta[]>([]);
+  const [savedBios, setSavedBios] = useState<RomMeta[]>([]);
+  const [biosId, setBiosId] = useState<string>("");
 
   useEffect(() => {
-    void listRoms().then(setSavedRoms);
+    void listRoms("rom").then(setSavedRoms);
+    void listRoms("bios").then((list) => {
+      setSavedBios(list);
+      const first = list[0];
+      if (first) setBiosId((cur) => cur || first.id);
+    });
   }, []);
+
 
 
   const containerRef = useRef<HTMLDivElement>(null);
