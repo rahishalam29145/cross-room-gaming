@@ -184,7 +184,7 @@ export default function HostStation() {
         rom = await loadRom(meta, (f) =>
           setProgress({ label: "ROM emulator me ja rahi hai…", value: f }),
         );
-        setSavedRoms(await listRoms());
+        setSavedRoms(await listRoms("rom"));
       } catch {
         // Storage full / private mode — fall back to the in-memory File.
         rom = file;
@@ -349,7 +349,7 @@ export default function HostStation() {
                       aria-label={`Delete ${meta.name}`}
                       onClick={async () => {
                         await deleteRom(meta);
-                        setSavedRoms(await listRoms());
+                        setSavedRoms(await listRoms("rom"));
                       }}
                       className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground"
                     >
