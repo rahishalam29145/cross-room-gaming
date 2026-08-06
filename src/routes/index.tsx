@@ -1,6 +1,8 @@
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
 import { Gamepad2, Radio, ShieldCheck, Wifi } from "lucide-react";
+import heroArcade from "@/assets/hero-arcade.jpg";
+
 
 const LobbyList = lazy(() => import("@/components/LobbyList"));
 
@@ -30,10 +32,18 @@ function Home() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 pb-20">
       <section className="scanlines relative mt-10 overflow-hidden rounded-2xl border border-border bg-card p-8 sm:p-12">
+        <img
+          src={heroArcade}
+          alt="Arcade fighting game key art"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
+        <div className="relative">
         <p className="font-mono text-xs tracking-[0.35em] text-primary">2-PLAYER · ONE CARTRIDGE</p>
         <h1 className="mt-4 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl">
           Ek ROM. Do players. Hazaaron kilometre door.
         </h1>
+
         <p className="mt-5 max-w-xl text-base text-muted-foreground">
           Player 1 apni retro game file browser me load karta hai. Player 2 sirf room code daalta
           hai — usko poori game screen live dikhti hai aur uske controls seedhe game me jaate hain.
@@ -56,7 +66,9 @@ function Home() {
             Join room (Player 2)
           </Link>
         </div>
+        </div>
       </section>
+
 
       <ClientOnly fallback={null}>
         <Suspense fallback={null}>

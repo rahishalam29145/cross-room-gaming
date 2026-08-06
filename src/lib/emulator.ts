@@ -92,9 +92,11 @@ export interface StartEmulatorOptions {
    * makes EmulatorJS fall back to "game" → "Romset is unknown".
    */
   rom: File;
+  /** Optional BIOS file (PS1 scph*.bin, Neo Geo neogeo.zip, etc.). */
+  bios?: File | null;
 }
 
-export async function startEmulator({ container, core, rom }: StartEmulatorOptions): Promise<void> {
+export async function startEmulator({ container, core, rom, bios }: StartEmulatorOptions): Promise<void> {
   const w = ejsWindow();
   installAudioTap();
 
@@ -111,6 +113,7 @@ export async function startEmulator({ container, core, rom }: StartEmulatorOptio
   w["EJS_gameUrl"] = rom;
   w["EJS_gameName"] = rom.name.replace(/\.[^.]+$/, "");
   w["EJS_gameID"] = rom.name;
+  w["EJS_biosUrl"] = bios ?? "";
   w["EJS_startOnLoaded"] = true;
   w["EJS_volume"] = 0.5;
   // Multi-threaded cores only work when the page is cross-origin isolated;
@@ -121,6 +124,7 @@ export async function startEmulator({ container, core, rom }: StartEmulatorOptio
 
   await loadLoaderScript();
 }
+
 
 /**
  * Waits for the emulator canvas to exist and have real pixels. Fails fast when

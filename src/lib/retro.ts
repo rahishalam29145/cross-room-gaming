@@ -144,9 +144,31 @@ export const BTN = {
   X: 9,
   L: 10,
   R: 11,
+  L2: 12,
+  R2: 13,
+  L3: 14,
+  R3: 15,
 } as const;
 
 export type ButtonName = keyof typeof BTN;
+
+/**
+ * PlayStation / arcade face-button naming for the same RetroArch indices.
+ * Cross = B, Circle = A, Square = Y, Triangle = X, L/R = L1/R1.
+ */
+export const PS_LABELS: Partial<Record<ButtonName, string>> = {
+  B: "✕",
+  A: "○",
+  Y: "□",
+  X: "△",
+  L: "L1",
+  R: "R1",
+  L2: "L2",
+  R2: "R2",
+  L3: "L3",
+  R3: "R3",
+};
+
 
 export function makeRoomCode(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
