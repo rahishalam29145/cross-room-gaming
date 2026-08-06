@@ -190,6 +190,17 @@ export default function HostStation() {
         rom = file;
       }
 
+      // Optional BIOS (PS1 / Neo Geo) comes from the same IndexedDB cache.
+      let bios: File | null = null;
+      const biosMeta = savedBios.find((b) => b.id === biosId);
+      if (biosMeta) {
+        try {
+          bios = await loadRom(biosMeta);
+        } catch {
+          bios = null;
+        }
+      }
+
       // Try the detected core first; if the romset isn't recognised by it,
       // fall through the remaining candidates automatically.
       const candidates = [core, ...coreCandidates(file.name).filter((c) => c !== core)];
@@ -202,7 +213,8 @@ export default function HostStation() {
           value: null,
         });
         try {
-          await startEmulator({ container: containerRef.current, core: candidate, rom });
+          await startEmulator({ container: containerRef.current, core: candidate, rom, bios });
+
           canvas = await waitForCanvas(containerRef.current, 45000);
           usedCore = candidate;
           break;
