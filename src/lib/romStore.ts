@@ -1,5 +1,5 @@
 /**
- * Chunked ROM storage in IndexedDB.
+ * Chunked ROM / BIOS storage in IndexedDB.
  *
  * Large arcade romsets (Tekken Tag, CPS3, PS1 images — 100-300MB) blow up when
  * read as a single ArrayBuffer on mobile. We stream the file in slices, store
@@ -8,10 +8,13 @@
  */
 
 const DB_NAME = "coopcast-roms";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const CHUNKS = "chunks";
 const META = "meta";
+const COVERS = "covers";
 const CHUNK_SIZE = 8 * 1024 * 1024; // 8MB slices keep peak memory low
+
+export type RomKind = "rom" | "bios";
 
 export interface RomMeta {
   id: string;
@@ -19,6 +22,7 @@ export interface RomMeta {
   size: number;
   chunks: number;
   savedAt: number;
+  kind?: RomKind;
 }
 
 function open(): Promise<IDBDatabase> {
@@ -28,6 +32,7 @@ function open(): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains(CHUNKS)) db.createObjectStore(CHUNKS);
       if (!db.objectStoreNames.contains(META)) db.createObjectStore(META, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(COVERS)) db.createObjectStore(COVERS);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error ?? new Error("IndexedDB unavailable"));
@@ -49,7 +54,11 @@ export function romId(file: File): string {
 }
 
 /** Streams a File into IndexedDB slice by slice, reporting 0-1 progress. */
-export async function saveRom(file: File, onProgress?: (fraction: number) => void): Promise<RomMeta> {
+export async function saveRom(
+  file: File,
+  onProgress?: (fraction: number) => void,
+  kind: RomKind = "rom",
+): Promise<RomMeta> {
   const db = await open();
   const id = romId(file);
   const chunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
@@ -67,7 +76,7 @@ export async function saveRom(file: File, onProgress?: (fraction: number) => voi
     onProgress?.((i + 1) / chunks);
   }
 
-  const meta: RomMeta = { id, name: file.name, size: file.size, chunks, savedAt: Date.now() };
+  const meta: RomMeta = { id, name: file.name, size: file.size, chunks, savedAt: Date.now(), kind };
   await tx(db, [META], "readwrite", (t) => {
     t.objectStore(META).put(meta);
   });
@@ -83,12 +92,14 @@ function getAll(db: IDBDatabase, store: string): Promise<unknown[]> {
   });
 }
 
-export async function listRoms(): Promise<RomMeta[]> {
+export async function listRoms(kind: RomKind = "rom"): Promise<RomMeta[]> {
   try {
     const db = await open();
     const rows = (await getAll(db, META)) as RomMeta[];
     db.close();
-    return rows.sort((a, b) => b.savedAt - a.savedAt);
+    return rows
+      .filter((r) => (r.kind ?? "rom") === kind)
+      .sort((a, b) => b.savedAt - a.savedAt);
   } catch {
     return [];
   }
@@ -110,7 +121,7 @@ export async function loadRom(meta: RomMeta, onProgress?: (fraction: number) => 
     const chunk = await getChunk(db, `${meta.id}#${i}`);
     if (!chunk) {
       db.close();
-      throw new Error("Saved ROM adhoori hai — file dobara select karein.");
+      throw new Error("Saved file adhoori hai — file dobara select karein.");
     }
     parts.push(chunk);
     onProgress?.((i + 1) / meta.chunks);
@@ -121,12 +132,37 @@ export async function loadRom(meta: RomMeta, onProgress?: (fraction: number) => 
 
 export async function deleteRom(meta: RomMeta): Promise<void> {
   const db = await open();
-  await tx(db, [CHUNKS, META], "readwrite", (t) => {
+  await tx(db, [CHUNKS, META, COVERS], "readwrite", (t) => {
     const store = t.objectStore(CHUNKS);
     for (let i = 0; i < meta.chunks; i++) store.delete(`${meta.id}#${i}`);
     t.objectStore(META).delete(meta.id);
+    t.objectStore(COVERS).delete(meta.id);
   });
   db.close();
+}
+
+/** Stores a user-picked cover image for a ROM. */
+export async function saveCover(id: string, image: Blob): Promise<void> {
+  const db = await open();
+  await tx(db, [COVERS], "readwrite", (t) => {
+    t.objectStore(COVERS).put(image, id);
+  });
+  db.close();
+}
+
+export async function getCover(id: string): Promise<Blob | null> {
+  try {
+    const db = await open();
+    const blob = await new Promise<Blob | undefined>((resolve, reject) => {
+      const req = db.transaction([COVERS], "readonly").objectStore(COVERS).get(id);
+      req.onsuccess = () => resolve(req.result as Blob | undefined);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return blob ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function formatSize(bytes: number): string {
