@@ -181,11 +181,33 @@ export default function HostStation() {
         rom = file;
       }
 
-      setProgress({ label: "Core boot ho raha hai…", value: null });
-      await startEmulator({ container: containerRef.current, core, rom });
-      const canvas = await waitForCanvas(containerRef.current);
+      // Try the detected core first; if the romset isn't recognised by it,
+      // fall through the remaining candidates automatically.
+      const candidates = [core, ...coreCandidates(file.name).filter((c) => c !== core)];
+      let canvas: HTMLCanvasElement | null = null;
+      let usedCore: CoreId = core;
+      let lastErr: unknown = null;
+      for (const candidate of candidates) {
+        setProgress({
+          label: `Core boot ho raha hai — ${CORE_LABELS[candidate]}…`,
+          value: null,
+        });
+        try {
+          await startEmulator({ container: containerRef.current, core: candidate, rom });
+          canvas = await waitForCanvas(containerRef.current, 45000);
+          usedCore = candidate;
+          break;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      if (!canvas) throw lastErr ?? new Error("Koi bhi core is ROM ko boot nahi kar paya.");
+      setCore(usedCore);
 
-      const stream = (canvas as HTMLCanvasElement).captureStream(60);
+      // 60 fps capture with a motion content hint keeps the encoder from
+      // dropping frames on fast-moving arcade scenes.
+      const stream = canvas.captureStream(60);
+      for (const track of stream.getVideoTracks()) track.contentHint = "motion";
       const audioTrack = getTappedAudioTrack();
       if (audioTrack) stream.addTrack(audioTrack);
       streamRef.current = stream;
@@ -193,7 +215,8 @@ export default function HostStation() {
       signalRef.current = createSignalChannel(roomCode, "host", (msg) => {
         void handleSignal(msg);
       });
-      void publishRoom({ code: roomCode, gameName: file.name, core });
+      void publishRoom({ code: roomCode, gameName: file.name, core: usedCore });
+
       setProgress(null);
       setPhase("live");
     } catch (e) {
