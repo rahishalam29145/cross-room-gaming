@@ -5,6 +5,8 @@ import {
   CORE_LABELS,
   ICE_SERVERS,
   detectCore,
+  coreCandidates,
+
   makeRoomCode,
   type CoreId,
   type InputMessage,
