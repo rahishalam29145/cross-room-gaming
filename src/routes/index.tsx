@@ -1,6 +1,8 @@
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
 import { Gamepad2, Radio, ShieldCheck, Wifi } from "lucide-react";
+import heroArcade from "@/assets/hero-arcade.jpg";
+
 
 const LobbyList = lazy(() => import("@/components/LobbyList"));
 
