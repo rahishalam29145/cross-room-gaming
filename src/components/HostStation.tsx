@@ -379,7 +379,7 @@ export default function HostStation() {
             </div>
           )}
 
-          {file && (core === "arcade" || core === "mame2003") && (
+          {file && /\.(zip|7z)$/i.test(file.name) && (
             <p className="mt-3 text-xs text-muted-foreground">
               Arcade tip: ZIP ko unzip mat karein — MAME/FBNeo romset zip hi chahiye (jaise{" "}
               <span className="font-mono">dino.zip</span>,{" "}
