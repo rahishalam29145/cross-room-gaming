@@ -122,7 +122,10 @@ export async function startEmulator({ container, core, rom }: StartEmulatorOptio
   await loadLoaderScript();
 }
 
-/** Waits for the emulator canvas to exist and have real pixels. */
+/**
+ * Waits for the emulator canvas to exist and have real pixels. Fails fast when
+ * EmulatorJS shows a romset/core error so the caller can try the next core.
+ */
 export function waitForCanvas(container: HTMLElement, timeoutMs = 300000): Promise<HTMLCanvasElement> {
   return new Promise((resolve, reject) => {
     const started = Date.now();
@@ -130,6 +133,11 @@ export function waitForCanvas(container: HTMLElement, timeoutMs = 300000): Promi
       const canvas = container.querySelector("canvas");
       if (canvas && canvas.width > 0 && canvas.height > 0) {
         resolve(canvas);
+        return;
+      }
+      const text = container.textContent ?? "";
+      if (/romset is unknown|not a valid|error loading|failed to (start|load)/i.test(text)) {
+        reject(new Error(text.trim().slice(0, 160) || "Core could not load this romset."));
         return;
       }
       if (Date.now() - started > timeoutMs) {
@@ -141,6 +149,7 @@ export function waitForCanvas(container: HTMLElement, timeoutMs = 300000): Promi
     tick();
   });
 }
+
 
 /** Pushes a remote player's button press into the running emulator. */
 export function sendInputToEmulator(player: number, buttonIndex: number, value: number): void {
