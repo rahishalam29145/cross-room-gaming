@@ -64,7 +64,9 @@ function Home() {
             Join room (Player 2)
           </Link>
         </div>
+        </div>
       </section>
+
 
       <ClientOnly fallback={null}>
         <Suspense fallback={null}>
