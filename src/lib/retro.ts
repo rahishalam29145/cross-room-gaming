@@ -11,11 +11,17 @@ export type CoreId =
   | "psx"
   | "segaMS"
   | "arcade"
-  | "mame2003";
+  | "mame2003"
+  | "mame2003_plus"
+  | "fbalpha2012_cps1"
+  | "fbalpha2012_cps2";
 
 export const CORE_LABELS: Record<CoreId, string> = {
-  arcade: "Arcade — FinalBurn Neo (Dino, Tekken Tag, CPS1/2/3, Neo Geo)",
-  mame2003: "Arcade — MAME 2003 (purani MAME romsets)",
+  mame2003_plus: "Arcade — MAME 2003 Plus (mame4droid jaisi romsets)",
+  mame2003: "Arcade — MAME 2003 (0.78 romsets)",
+  arcade: "Arcade — FinalBurn Neo (CPS1/2/3, Neo Geo, Dino)",
+  fbalpha2012_cps1: "Arcade — CPS1 (FB Alpha 2012)",
+  fbalpha2012_cps2: "Arcade — CPS2 (FB Alpha 2012)",
   psx: "PlayStation 1 (Tekken 3, etc.)",
   nes: "NES / Famicom",
   snes: "SNES",
@@ -26,9 +32,47 @@ export const CORE_LABELS: Record<CoreId, string> = {
   n64: "Nintendo 64",
 };
 
+/** Arcade cores tried in order when a romset needs a fallback. */
+export const ARCADE_CORES: CoreId[] = [
+  "mame2003_plus",
+  "mame2003",
+  "arcade",
+  "fbalpha2012_cps2",
+  "fbalpha2012_cps1",
+];
+
+/**
+ * Known romset names → the core that runs them best. Keys are matched against
+ * the zip file name (without extension), lowercased.
+ */
+const ROMSET_CORES: Record<string, CoreId[]> = {
+  // Namco System 12 / 11 — MAME-only (mame4droid heritage)
+  tektagt: ["mame2003_plus", "mame2003"],
+  tekken: ["mame2003_plus", "mame2003"],
+  tekken2: ["mame2003_plus", "mame2003"],
+  tekken3: ["mame2003_plus", "mame2003"],
+  soulclbr: ["mame2003_plus", "mame2003"],
+  // Capcom CPS
+  dino: ["arcade", "fbalpha2012_cps1", "mame2003_plus"],
+  captcomm: ["arcade", "fbalpha2012_cps1"],
+  punisher: ["arcade", "fbalpha2012_cps1"],
+  sf2: ["arcade", "fbalpha2012_cps1"],
+  ssf2t: ["arcade", "fbalpha2012_cps2"],
+  mvsc: ["arcade", "fbalpha2012_cps2"],
+  xmvsf: ["arcade", "fbalpha2012_cps2"],
+  avsp: ["arcade", "fbalpha2012_cps2"],
+  sfa3: ["arcade", "fbalpha2012_cps2"],
+  // Neo Geo
+  kof98: ["arcade", "mame2003_plus"],
+  kof2002: ["arcade", "mame2003_plus"],
+  mslug: ["arcade", "mame2003_plus"],
+  mslug3: ["arcade", "mame2003_plus"],
+  garou: ["arcade", "mame2003_plus"],
+};
+
 const EXT_TO_CORE: Record<string, CoreId> = {
-  zip: "arcade",
-  "7z": "arcade",
+  zip: "mame2003_plus",
+  "7z": "mame2003_plus",
   nes: "nes",
   fds: "nes",
   unf: "nes",
@@ -55,10 +99,31 @@ const EXT_TO_CORE: Record<string, CoreId> = {
   mdf: "psx",
 };
 
-export function detectCore(fileName: string): CoreId | null {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return EXT_TO_CORE[ext] ?? null;
+function baseName(fileName: string): string {
+  return fileName.replace(/\.[^.]+$/, "").toLowerCase().trim();
 }
+
+/**
+ * Ordered list of cores to try for a file. Arcade zips are matched against a
+ * romset table first, then fall back to the full arcade core rotation.
+ */
+export function coreCandidates(fileName: string): CoreId[] {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "zip" || ext === "7z") {
+    const name = baseName(fileName);
+    const known = ROMSET_CORES[name];
+    const ordered = known ? [...known] : [];
+    for (const c of ARCADE_CORES) if (!ordered.includes(c)) ordered.push(c);
+    return ordered;
+  }
+  const single = EXT_TO_CORE[ext];
+  return single ? [single] : [];
+}
+
+export function detectCore(fileName: string): CoreId | null {
+  return coreCandidates(fileName)[0] ?? null;
+}
+
 
 export const ACCEPTED_EXTENSIONS = Object.keys(EXT_TO_CORE)
   .map((e) => `.${e}`)
