@@ -82,12 +82,22 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
     iceRef.current = createIceRelay(pc, (m) => signalRef.current?.send(m));
 
     pc.ontrack = (event) => {
+      // Ask the receiver for the smallest possible jitter buffer — gameplay
+      // needs freshness, not smoothing.
+      try {
+        const r = event.receiver as RTCRtpReceiver & { playoutDelayHint?: number; jitterBufferTarget?: number };
+        r.playoutDelayHint = 0;
+        r.jitterBufferTarget = 0;
+      } catch {
+        /* unsupported in some browsers */
+      }
       const video = videoRef.current;
       if (video && event.streams[0]) {
         video.srcObject = event.streams[0];
         void video.play().catch(() => undefined);
       }
     };
+
 
     pc.ondatachannel = (event) => {
       const dc = event.channel;
