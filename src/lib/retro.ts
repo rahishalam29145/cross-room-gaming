@@ -156,7 +156,7 @@ export function detectCore(fileName: string): CoreId | null {
 }
 
 
-export const ACCEPTED_EXTENSIONS = Object.keys(EXT_TO_CORE)
+export const ACCEPTED_EXTENSIONS = Object.keys(EXT_TO_CORES)
   .map((e) => `.${e}`)
   .join(",");
 
