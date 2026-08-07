@@ -43,7 +43,9 @@ export function resumeEmulatorAudio(): void {
   }
   const emu = ejsWindow().EJS_emulator;
   try {
+    if (emu) emu.muted = false;
     emu?.setVolume?.(1);
+
   } catch {
     /* volume API differs across EmulatorJS builds */
   }
