@@ -184,6 +184,22 @@ export const BTN = {
 export type ButtonName = keyof typeof BTN;
 
 /**
+ * EmulatorJS analog stick input indices (RetroArch analog bindings).
+ * Each direction takes an analog value between 0 and 1.
+ */
+export const AXIS = {
+  LSTICK_UP: 16,
+  LSTICK_DOWN: 17,
+  LSTICK_LEFT: 18,
+  LSTICK_RIGHT: 19,
+  RSTICK_UP: 20,
+  RSTICK_DOWN: 21,
+  RSTICK_LEFT: 22,
+  RSTICK_RIGHT: 23,
+} as const;
+
+
+/**
  * PlayStation / arcade face-button naming for the same RetroArch indices.
  * Cross = B, Circle = A, Square = Y, Triangle = X, L/R = L1/R1.
  */
@@ -224,8 +240,10 @@ export type SignalMessage =
 
 export type InputMessage =
   | { t: "btn"; b: number; v: 0 | 1 }
+  | { t: "axis"; a: number; v: number }
   | { t: "ping"; ts: number }
   | { t: "pong"; ts: number };
+
 
 export const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },

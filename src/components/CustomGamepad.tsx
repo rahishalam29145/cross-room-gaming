@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Move, Plus, RotateCcw, Settings2, Trash2, X } from "lucide-react";
-import { BTN, PS_LABELS, type ButtonName } from "@/lib/retro";
+import { AXIS, BTN, PS_LABELS, type ButtonName } from "@/lib/retro";
 
 export interface PadButton {
   id: string;
+  /** "stick" renders an analog thumbstick instead of a round button. */
+  kind?: "button" | "stick";
   name: ButtonName;
   /** Position of the button centre, in % of the pad area. */
   x: number;
@@ -12,7 +14,7 @@ export interface PadButton {
   size: number;
 }
 
-const STORAGE_KEY = "coopcast-pad-layout-v2";
+const STORAGE_KEY = "coopcast-pad-layout-v3";
 
 /** Classic 4-face-button console layout (NES/SNES/Genesis/GBA). */
 const RETRO_LAYOUT: PadButton[] = [
@@ -30,22 +32,23 @@ const RETRO_LAYOUT: PadButton[] = [
   { id: "start", name: "START", x: 58, y: 90, size: 48 },
 ];
 
-/** PlayStation / arcade layout: triangle, square, circle, cross + L1/L2/R1/R2. */
+/** PlayStation / PSP layout: analog stick, △ □ ○ ✕ and L1/L2/R1/R2. */
 const PS_LAYOUT: PadButton[] = [
-  { id: "up", name: "UP", x: 14, y: 34, size: 54 },
-  { id: "down", name: "DOWN", x: 14, y: 76, size: 54 },
-  { id: "left", name: "LEFT", x: 5, y: 55, size: 54 },
-  { id: "right", name: "RIGHT", x: 23, y: 55, size: 54 },
-  { id: "tri", name: "X", x: 78, y: 34, size: 54 },
-  { id: "sq", name: "Y", x: 68, y: 55, size: 54 },
-  { id: "cir", name: "A", x: 88, y: 55, size: 54 },
-  { id: "cross", name: "B", x: 78, y: 76, size: 54 },
-  { id: "l1", name: "L", x: 9, y: 8, size: 46 },
-  { id: "l2", name: "L2", x: 26, y: 8, size: 46 },
-  { id: "r1", name: "R", x: 91, y: 8, size: 46 },
-  { id: "r2", name: "R2", x: 74, y: 8, size: 46 },
-  { id: "select", name: "SELECT", x: 42, y: 92, size: 46 },
-  { id: "start", name: "START", x: 58, y: 92, size: 46 },
+  { id: "l2", name: "L2", x: 9, y: 8, size: 44 },
+  { id: "l1", name: "L", x: 26, y: 8, size: 44 },
+  { id: "r1", name: "R", x: 74, y: 8, size: 44 },
+  { id: "r2", name: "R2", x: 91, y: 8, size: 44 },
+  { id: "up", name: "UP", x: 14, y: 30, size: 48 },
+  { id: "left", name: "LEFT", x: 5, y: 50, size: 48 },
+  { id: "right", name: "RIGHT", x: 23, y: 50, size: 48 },
+  { id: "down", name: "DOWN", x: 14, y: 70, size: 48 },
+  { id: "tri", name: "X", x: 82, y: 30, size: 52 },
+  { id: "sq", name: "Y", x: 71, y: 50, size: 52 },
+  { id: "cir", name: "A", x: 93, y: 50, size: 52 },
+  { id: "cross", name: "B", x: 82, y: 70, size: 52 },
+  { id: "stick", kind: "stick", name: "UP", x: 42, y: 58, size: 108 },
+  { id: "select", name: "SELECT", x: 38, y: 93, size: 44 },
+  { id: "start", name: "START", x: 62, y: 93, size: 44 },
 ];
 
 const ALL_BUTTONS = Object.keys(BTN) as ButtonName[];
@@ -58,10 +61,10 @@ const GLYPH: Partial<Record<ButtonName, string>> = {
 };
 
 const TONE: Partial<Record<ButtonName, string>> = {
-  A: "border-destructive bg-destructive/20 text-destructive",
-  B: "border-chart-2 bg-chart-2/20 text-chart-2",
-  X: "border-chart-4 bg-chart-4/20 text-chart-4",
-  Y: "border-chart-3 bg-chart-3/20 text-chart-3",
+  A: "border-destructive/70 bg-destructive/25 text-destructive",
+  B: "border-chart-2/70 bg-chart-2/25 text-chart-2",
+  X: "border-chart-4/70 bg-chart-4/25 text-chart-4",
+  Y: "border-chart-3/70 bg-chart-3/25 text-chart-3",
 };
 
 function loadLayout(fallback: PadButton[]): PadButton[] {
@@ -79,12 +82,14 @@ function loadLayout(fallback: PadButton[]): PadButton[] {
 
 interface Props {
   onButton: (index: number, pressed: boolean) => void;
+  /** Analog stick axis updates (EmulatorJS analog indices, value 0..1). */
+  onAxis?: (index: number, value: number) => void;
   disabled?: boolean;
   /** Show PlayStation/arcade glyphs (△ □ ○ ✕, L1/L2/R1/R2). */
   psStyle?: boolean;
 }
 
-export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
+export function CustomGamepad({ onButton, onAxis, disabled, psStyle = true }: Props) {
   const defaults = psStyle ? PS_LAYOUT : RETRO_LAYOUT;
   const [layout, setLayout] = useState<PadButton[]>(defaults);
   const [editing, setEditing] = useState(false);
@@ -153,6 +158,10 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
     persist([...layout, { id: `${name}-${Date.now()}`, name, x: 50, y: 50, size: 54 }]);
   };
 
+  const addStick = () => {
+    persist([...layout, { id: `stick-${Date.now()}`, kind: "stick", name: "UP", x: 42, y: 58, size: 108 }]);
+  };
+
   const removeSelected = () => {
     if (!selectedBtn) return;
     persist(layout.filter((b) => b.id !== selectedBtn.id));
@@ -188,7 +197,7 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
 
       <div
         ref={areaRef}
-        className={`relative h-[300px] w-full touch-none overflow-hidden rounded-xl border ${
+        className={`relative h-[320px] w-full touch-none overflow-hidden rounded-xl border ${
           editing ? "border-primary/60 bg-primary/5" : "border-border bg-muted/20"
         } ${!editing && disabled ? "opacity-40" : ""}`}
       >
@@ -202,6 +211,22 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
 
         {layout.map((btn) => {
           const isSelected = editing && selected === btn.id;
+          if (btn.kind === "stick") {
+            return (
+              <AnalogStick
+                key={btn.id}
+                btn={btn}
+                selected={isSelected}
+                editing={editing}
+                disabled={disabled}
+                onAxis={onAxis}
+                onStartDrag={() => {
+                  setSelected(btn.id);
+                  dragRef.current = btn.id;
+                }}
+              />
+            );
+          }
           return (
             <button
               key={btn.id}
@@ -213,10 +238,10 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
                 height: btn.size,
                 transform: "translate(-50%, -50%)",
               }}
-              className={`absolute grid select-none place-items-center rounded-full border-2 font-mono text-[12px] font-bold shadow-[0_4px_0_0_rgba(0,0,0,0.45)] transition-[filter,transform] duration-75 ${
+              className={`absolute grid select-none place-items-center rounded-full border-2 bg-gradient-to-b from-white/15 to-transparent font-mono text-[13px] font-bold shadow-[0_5px_0_0_rgba(0,0,0,0.5),inset_0_2px_6px_rgba(255,255,255,0.25)] transition-[filter,transform] duration-75 ${
                 TONE[btn.name] ?? "border-border bg-secondary text-secondary-foreground"
               } ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${
-                editing ? "cursor-move" : "active:scale-95 active:brightness-150"
+                editing ? "cursor-move" : "active:translate-y-[2px] active:scale-95 active:brightness-150"
               }`}
               onPointerDown={(e) => {
                 e.preventDefault();
@@ -251,13 +276,15 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
         <div className="mt-3 space-y-3 rounded-xl border border-border bg-card p-4">
           {selectedBtn ? (
             <div className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-xs text-primary">{label(selectedBtn.name)}</span>
+              <span className="font-mono text-xs text-primary">
+                {selectedBtn.kind === "stick" ? "ANALOG" : label(selectedBtn.name)}
+              </span>
               <label className="flex flex-1 items-center gap-2 text-xs text-muted-foreground">
                 Size
                 <input
                   type="range"
                   min={32}
-                  max={120}
+                  max={160}
                   value={selectedBtn.size}
                   onChange={(e) => resizeSelected(Number(e.target.value))}
                   className="flex-1 accent-[var(--color-primary)]"
@@ -273,12 +300,19 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Kisi button par tap karke use resize ya remove karein, drag karke jagah badlein.
+              Kisi button ya analog stick par tap karke use resize ya remove karein, drag karke jagah badlein.
             </p>
           )}
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-[11px] tracking-widest text-muted-foreground">ADD</span>
+            <button
+              onClick={addStick}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 font-mono text-[11px] text-foreground hover:border-primary hover:text-primary"
+            >
+              <Plus className="h-3 w-3" aria-hidden />
+              ANALOG
+            </button>
             {ALL_BUTTONS.map((name) => (
               <button
                 key={name}
@@ -296,7 +330,7 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
               onClick={() => persist(PS_LAYOUT)}
               className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
-              PlayStation / Arcade layout
+              PSP / PlayStation layout
             </button>
             <button
               onClick={() => persist(RETRO_LAYOUT)}
@@ -316,6 +350,133 @@ export function CustomGamepad({ onButton, disabled, psStyle = true }: Props) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface StickProps {
+  btn: PadButton;
+  selected: boolean;
+  editing: boolean;
+  disabled?: boolean | undefined;
+  onAxis?: ((index: number, value: number) => void) | undefined;
+  onStartDrag: () => void;
+}
+
+/** Left analog thumbstick — reports RetroArch analog axes (0..1 per direction). */
+function AnalogStick({ btn, selected, editing, disabled, onAxis, onStartDrag }: StickProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const active = useRef(false);
+  const last = useRef({ up: 0, down: 0, left: 0, right: 0 });
+  const [knob, setKnob] = useState({ x: 0, y: 0 });
+
+  const emit = useCallback(
+    (nx: number, ny: number) => {
+      if (!onAxis) return;
+      const dead = 0.12;
+      const q = (v: number) => (Math.abs(v) < dead ? 0 : Math.round(Math.min(1, Math.abs(v)) * 20) / 20);
+      const next = {
+        left: nx < 0 ? q(nx) : 0,
+        right: nx > 0 ? q(nx) : 0,
+        up: ny < 0 ? q(ny) : 0,
+        down: ny > 0 ? q(ny) : 0,
+      };
+      if (next.left !== last.current.left) onAxis(AXIS.LSTICK_LEFT, next.left);
+      if (next.right !== last.current.right) onAxis(AXIS.LSTICK_RIGHT, next.right);
+      if (next.up !== last.current.up) onAxis(AXIS.LSTICK_UP, next.up);
+      if (next.down !== last.current.down) onAxis(AXIS.LSTICK_DOWN, next.down);
+      last.current = next;
+    },
+    [onAxis],
+  );
+
+  const track = useCallback(
+    (clientX: number, clientY: number) => {
+      const rect = ref.current?.getBoundingClientRect();
+      if (!rect) return;
+      const r = rect.width / 2;
+      let dx = (clientX - (rect.left + r)) / r;
+      let dy = (clientY - (rect.top + r)) / r;
+      const mag = Math.hypot(dx, dy);
+      if (mag > 1) {
+        dx /= mag;
+        dy /= mag;
+      }
+      setKnob({ x: dx, y: dy });
+      emit(dx, dy);
+    },
+    [emit],
+  );
+
+  const release = useCallback(() => {
+    active.current = false;
+    setKnob({ x: 0, y: 0 });
+    emit(0, 0);
+  }, [emit]);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!active.current) return;
+      e.preventDefault();
+      track(e.clientX, e.clientY);
+    };
+    const onUp = () => {
+      if (active.current) release();
+    };
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [track, release]);
+
+  useEffect(() => {
+    if (disabled || editing) release();
+  }, [disabled, editing, release]);
+
+  const knobSize = Math.round(btn.size * 0.46);
+
+  return (
+    <div
+      ref={ref}
+      aria-label="Analog stick"
+      style={{
+        left: `${btn.x}%`,
+        top: `${btn.y}%`,
+        width: btn.size,
+        height: btn.size,
+        transform: "translate(-50%, -50%)",
+      }}
+      className={`absolute select-none rounded-full border-2 border-border bg-secondary/40 shadow-[inset_0_3px_10px_rgba(0,0,0,0.55)] ${
+        selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+      } ${editing ? "cursor-move" : ""}`}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        if (editing) {
+          onStartDrag();
+          return;
+        }
+        if (disabled) return;
+        active.current = true;
+        track(e.clientX, e.clientY);
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div
+        style={{
+          width: knobSize,
+          height: knobSize,
+          left: "50%",
+          top: "50%",
+          transform: `translate(-50%, -50%) translate(${knob.x * (btn.size / 2 - knobSize / 2)}px, ${
+            knob.y * (btn.size / 2 - knobSize / 2)
+          }px)`,
+        }}
+        className="pointer-events-none absolute rounded-full border-2 border-primary/60 bg-gradient-to-b from-white/25 to-transparent bg-secondary shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
+      />
     </div>
   );
 }

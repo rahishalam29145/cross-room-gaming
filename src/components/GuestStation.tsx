@@ -166,6 +166,13 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
     dc.send(JSON.stringify({ t: "btn", b: index, v: pressed ? 1 : 0 } satisfies InputMessage));
   }, []);
 
+  const sendAxis = useCallback((index: number, value: number) => {
+    const dc = dcRef.current;
+    if (dc?.readyState !== "open") return;
+    dc.send(JSON.stringify({ t: "axis", a: index, v: value } satisfies InputMessage));
+  }, []);
+
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-16">
       {phase !== "connected" && (
@@ -286,7 +293,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
       )}
 
       <div className="mt-6">
-        <CustomGamepad onButton={sendButton} disabled={phase !== "connected"} />
+        <CustomGamepad onButton={sendButton} onAxis={sendAxis} disabled={phase !== "connected"} />
       </div>
     </div>
   );
