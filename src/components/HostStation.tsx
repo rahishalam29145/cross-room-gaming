@@ -128,6 +128,9 @@ export default function HostStation() {
       if (msg.t === "btn") {
         if (!p2Ref.current) return;
         sendInputToEmulator(1, msg.b, msg.v);
+      } else if (msg.t === "axis") {
+        if (!p2Ref.current) return;
+        sendInputToEmulator(1, msg.a, msg.v);
       } else if (msg.t === "ping") {
         channel.send(JSON.stringify({ t: "pong", ts: msg.ts } satisfies InputMessage));
       }
