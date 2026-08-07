@@ -240,8 +240,10 @@ export type SignalMessage =
 
 export type InputMessage =
   | { t: "btn"; b: number; v: 0 | 1 }
+  | { t: "axis"; a: number; v: number }
   | { t: "ping"; ts: number }
   | { t: "pong"; ts: number };
+
 
 export const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
