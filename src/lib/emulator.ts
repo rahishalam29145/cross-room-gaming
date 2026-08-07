@@ -13,8 +13,11 @@ interface EJSWindow {
     gameManager?: {
       simulateInput?: (player: number, index: number, value: number) => void;
     };
+    setVolume?: (v: number) => void;
+    muted?: boolean;
     canvas?: HTMLCanvasElement;
   };
+
 }
 
 function ejsWindow(): EJSWindow {
