@@ -167,7 +167,7 @@ export async function startEmulator({ container, core, rom, bios }: StartEmulato
   w["EJS_gameID"] = rom.name;
   w["EJS_biosUrl"] = bios ?? "";
   w["EJS_startOnLoaded"] = true;
-  w["EJS_volume"] = 0.5;
+  w["EJS_volume"] = 1;
   // Multi-threaded cores only work when the page is cross-origin isolated;
   // enabling them elsewhere hard-fails the core boot.
   w["EJS_threads"] = typeof window !== "undefined" && window.crossOriginIsolated === true;
