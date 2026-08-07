@@ -259,14 +259,24 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
           ref={videoRef}
           playsInline
           autoPlay
+          muted={!soundOn}
           className="h-full w-full object-contain"
         />
+        {phase === "connected" && !soundOn && (
+          <button
+            onClick={enableSound}
+            className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-background"
+          >
+            <Volume2 className="h-4 w-4" aria-hidden /> Tap for sound
+          </button>
+        )}
         {phase !== "connected" && (
           <div className="absolute inset-0 grid place-items-center text-xs text-muted-foreground">
             Player 1 ki screen yahan aayegi
           </div>
         )}
       </div>
+
 
       {phase === "connected" && (
         <p className="mt-3 flex items-center justify-center gap-2 font-mono text-xs text-chart-2">
