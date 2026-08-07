@@ -14,6 +14,18 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
   const [error, setError] = useState<string | null>(null);
   const [rooms, setRooms] = useState<LobbyRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
+  // Autoplay policies block sound until the guest taps, so start muted.
+  const [soundOn, setSoundOn] = useState(false);
+
+  const enableSound = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = false;
+    video.volume = 1;
+    void video.play().catch(() => undefined);
+    setSoundOn(true);
+  }, []);
+
 
   const refreshRooms = useCallback(async () => {
     setLoadingRooms(true);
