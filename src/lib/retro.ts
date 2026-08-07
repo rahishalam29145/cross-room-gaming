@@ -9,20 +9,32 @@ export type CoreId =
   | "segaMD"
   | "n64"
   | "psx"
+  | "psp"
   | "segaMS"
   | "arcade"
+  | "mame2000"
   | "mame2003"
   | "mame2003_plus"
+  | "mame2010"
+  | "mame2015"
+  | "mame2016"
+  | "mame"
   | "fbalpha2012_cps1"
   | "fbalpha2012_cps2";
 
 export const CORE_LABELS: Record<CoreId, string> = {
-  mame2003_plus: "Arcade — MAME 2003 Plus (mame4droid jaisi romsets)",
-  mame2003: "Arcade — MAME 2003 (0.78 romsets)",
+  mame2003_plus: "Arcade — MAME 2003 Plus (v0.78, MAME4droid romsets)",
+  mame2003: "Arcade — MAME 2003 (v0.78)",
+  mame2000: "Arcade — MAME 2000 (v0.37b5, MAME4all romsets)",
+  mame2010: "Arcade — MAME 2010 (v0.139)",
+  mame2015: "Arcade — MAME 2015 (v0.160)",
+  mame2016: "Arcade — MAME 2016 (v0.174)",
+  mame: "Arcade — Current MAME (v0.2xx, latest romsets)",
   arcade: "Arcade — FinalBurn Neo (CPS1/2/3, Neo Geo, Dino)",
   fbalpha2012_cps1: "Arcade — CPS1 (FB Alpha 2012)",
   fbalpha2012_cps2: "Arcade — CPS2 (FB Alpha 2012)",
   psx: "PlayStation 1 (Tekken 3, etc.)",
+  psp: "PSP — PPSSPP (ISO/CSO)",
   nes: "NES / Famicom",
   snes: "SNES",
   gba: "Game Boy Advance",
@@ -39,7 +51,13 @@ export const ARCADE_CORES: CoreId[] = [
   "arcade",
   "fbalpha2012_cps2",
   "fbalpha2012_cps1",
+  "mame2010",
+  "mame2015",
+  "mame2016",
+  "mame",
+  "mame2000",
 ];
+
 
 /**
  * Known romset names → the core that runs them best. Keys are matched against
