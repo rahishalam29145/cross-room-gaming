@@ -24,6 +24,35 @@ function ejsWindow(): EJSWindow {
 let audioTapStream: MediaStream | null = null;
 let audioTapInstalled = false;
 
+/** Every AudioContext the emulator creates, so we can resume them on a gesture. */
+const audioContexts = new Set<BaseAudioContext>();
+
+/**
+ * Browsers start AudioContexts suspended until the user interacts with the
+ * page, which is why the emulator boots silently. Resuming every known context
+ * (and doing it again on the first tap/click/key) restores sound.
+ */
+export function resumeEmulatorAudio(): void {
+  for (const ctx of audioContexts) {
+    if (ctx.state !== "running") {
+      void (ctx as AudioContext).resume?.().catch(() => undefined);
+    }
+  }
+  const emu = ejsWindow().EJS_emulator;
+  try {
+    emu?.setVolume?.(1);
+  } catch {
+    /* volume API differs across EmulatorJS builds */
+  }
+}
+
+function installGestureResume(): void {
+  const handler = () => resumeEmulatorAudio();
+  for (const evt of ["pointerdown", "touchstart", "keydown", "click"] as const) {
+    window.addEventListener(evt, handler, { passive: true });
+  }
+}
+
 /**
  * Taps every WebAudio node that connects to a context destination so the
  * emulator's sound can be streamed to the remote player.
@@ -35,6 +64,22 @@ export function installAudioTap(): void {
   const Ctx = window.AudioContext;
   if (!Ctx) return;
 
+  // Track every context the emulator creates so it can be un-suspended later.
+  const w = ejsWindow();
+  const patch = (Original: typeof AudioContext) =>
+    new Proxy(Original, {
+      construct(target, args: ConstructorParameters<typeof AudioContext>) {
+        const ctx = new target(...args);
+        audioContexts.add(ctx);
+        void ctx.resume?.().catch(() => undefined);
+        return ctx;
+      },
+    });
+  window.AudioContext = patch(Ctx) as typeof AudioContext;
+  const webkit = w["webkitAudioContext"] as typeof AudioContext | undefined;
+  if (webkit) w["webkitAudioContext"] = patch(webkit);
+  installGestureResume();
+
   const originalConnect = AudioNode.prototype.connect;
   const taps = new WeakMap<BaseAudioContext, MediaStreamAudioDestinationNode>();
 
@@ -43,6 +88,7 @@ export function installAudioTap(): void {
     const target = args[0];
     try {
       const ctx = this.context;
+      audioContexts.add(ctx);
       if (target && target === ctx.destination && "createMediaStreamDestination" in ctx) {
         let tap = taps.get(ctx);
         if (!tap) {
@@ -63,6 +109,7 @@ export function installAudioTap(): void {
 export function getTappedAudioTrack(): MediaStreamTrack | null {
   return audioTapStream?.getAudioTracks()[0] ?? null;
 }
+
 
 let loaderPromise: Promise<void> | null = null;
 
