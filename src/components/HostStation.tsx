@@ -540,6 +540,12 @@ export default function HostStation() {
                     ? "PLAYER 2 LOST"
                     : "WAITING FOR PLAYER 2"}
             </span>
+            <button
+              onClick={() => resumeEmulatorAudio()}
+              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-foreground hover:border-primary"
+            >
+              <Volume2 className="h-3.5 w-3.5" aria-hidden /> Sound ON karein
+            </button>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
@@ -549,6 +555,7 @@ export default function HostStation() {
               />
               Player 2 controls enabled
             </label>
+
           </div>
         </section>
       )}
