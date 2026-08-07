@@ -293,7 +293,7 @@ export default function GuestStation({ initialCode = "" }: { initialCode?: strin
       )}
 
       <div className="mt-6">
-        <CustomGamepad onButton={sendButton} disabled={phase !== "connected"} />
+        <CustomGamepad onButton={sendButton} onAxis={sendAxis} disabled={phase !== "connected"} />
       </div>
     </div>
   );
