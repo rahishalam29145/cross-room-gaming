@@ -17,10 +17,12 @@ import { heartbeatRoom, publishRoom, removeRoom } from "@/lib/rooms";
 import { coverForGame, prettyGameName } from "@/lib/covers";
 import {
   getTappedAudioTrack,
+  resumeEmulatorAudio,
   sendInputToEmulator,
   startEmulator,
   waitForCanvas,
 } from "@/lib/emulator";
+
 import {
   deleteRom,
   formatSize,
