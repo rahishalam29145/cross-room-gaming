@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Plug, RefreshCw, Signal, Users } from "lucide-react";
+import { Loader2, Plug, RefreshCw, Signal, Users, Volume2 } from "lucide-react";
 import { ICE_SERVERS, sanitizeCode, CORE_LABELS, type CoreId, type InputMessage, type SignalMessage } from "@/lib/retro";
 import { createIceRelay, createSignalChannel } from "@/lib/signaling";
 import { listOpenRooms, type LobbyRoom } from "@/lib/rooms";
