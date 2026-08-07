@@ -358,8 +358,8 @@ interface StickProps {
   btn: PadButton;
   selected: boolean;
   editing: boolean;
-  disabled?: boolean;
-  onAxis?: (index: number, value: number) => void;
+  disabled?: boolean | undefined;
+  onAxis?: ((index: number, value: number) => void) | undefined;
   onStartDrag: () => void;
 }
 
