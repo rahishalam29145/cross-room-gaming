@@ -17,10 +17,12 @@ import { heartbeatRoom, publishRoom, removeRoom } from "@/lib/rooms";
 import { coverForGame, prettyGameName } from "@/lib/covers";
 import {
   getTappedAudioTrack,
+  resumeEmulatorAudio,
   sendInputToEmulator,
   startEmulator,
   waitForCanvas,
 } from "@/lib/emulator";
+
 import {
   deleteRom,
   formatSize,
@@ -224,14 +226,27 @@ export default function HostStation() {
       }
       if (!canvas) throw lastErr ?? new Error("Koi bhi core is ROM ko boot nahi kar paya.");
       setCore(usedCore);
+      // Browsers suspend the emulator's AudioContext until a gesture — resume it.
+      resumeEmulatorAudio();
 
       // 60 fps capture with a motion content hint keeps the encoder from
       // dropping frames on fast-moving arcade scenes.
       const stream = canvas.captureStream(60);
       for (const track of stream.getVideoTracks()) track.contentHint = "motion";
-      const audioTrack = getTappedAudioTrack();
-      if (audioTrack) stream.addTrack(audioTrack);
+      // The core often creates its audio graph a moment after the first frame,
+      // so poll briefly for the tapped track before giving up on remote sound.
+      let audioTrack = getTappedAudioTrack();
+      for (let i = 0; i < 20 && !audioTrack; i++) {
+        await new Promise((r) => setTimeout(r, 250));
+        resumeEmulatorAudio();
+        audioTrack = getTappedAudioTrack();
+      }
+      if (audioTrack) {
+        audioTrack.contentHint = "music";
+        stream.addTrack(audioTrack);
+      }
       streamRef.current = stream;
+
 
       signalRef.current = createSignalChannel(roomCode, "host", (msg) => {
         void handleSignal(msg);
@@ -540,6 +555,12 @@ export default function HostStation() {
                     ? "PLAYER 2 LOST"
                     : "WAITING FOR PLAYER 2"}
             </span>
+            <button
+              onClick={() => resumeEmulatorAudio()}
+              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-foreground hover:border-primary"
+            >
+              <Volume2 className="h-3.5 w-3.5" aria-hidden /> Sound ON karein
+            </button>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
@@ -549,6 +570,7 @@ export default function HostStation() {
               />
               Player 2 controls enabled
             </label>
+
           </div>
         </section>
       )}

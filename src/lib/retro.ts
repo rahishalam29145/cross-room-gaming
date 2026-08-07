@@ -9,20 +9,32 @@ export type CoreId =
   | "segaMD"
   | "n64"
   | "psx"
+  | "psp"
   | "segaMS"
   | "arcade"
+  | "mame2000"
   | "mame2003"
   | "mame2003_plus"
+  | "mame2010"
+  | "mame2015"
+  | "mame2016"
+  | "mame"
   | "fbalpha2012_cps1"
   | "fbalpha2012_cps2";
 
 export const CORE_LABELS: Record<CoreId, string> = {
-  mame2003_plus: "Arcade — MAME 2003 Plus (mame4droid jaisi romsets)",
-  mame2003: "Arcade — MAME 2003 (0.78 romsets)",
+  mame2003_plus: "Arcade — MAME 2003 Plus (v0.78, MAME4droid romsets)",
+  mame2003: "Arcade — MAME 2003 (v0.78)",
+  mame2000: "Arcade — MAME 2000 (v0.37b5, MAME4all romsets)",
+  mame2010: "Arcade — MAME 2010 (v0.139)",
+  mame2015: "Arcade — MAME 2015 (v0.160)",
+  mame2016: "Arcade — MAME 2016 (v0.174)",
+  mame: "Arcade — Current MAME (v0.2xx, latest romsets)",
   arcade: "Arcade — FinalBurn Neo (CPS1/2/3, Neo Geo, Dino)",
   fbalpha2012_cps1: "Arcade — CPS1 (FB Alpha 2012)",
   fbalpha2012_cps2: "Arcade — CPS2 (FB Alpha 2012)",
   psx: "PlayStation 1 (Tekken 3, etc.)",
+  psp: "PSP — PPSSPP (ISO/CSO)",
   nes: "NES / Famicom",
   snes: "SNES",
   gba: "Game Boy Advance",
@@ -39,19 +51,26 @@ export const ARCADE_CORES: CoreId[] = [
   "arcade",
   "fbalpha2012_cps2",
   "fbalpha2012_cps1",
+  "mame2010",
+  "mame2015",
+  "mame2016",
+  "mame",
+  "mame2000",
 ];
+
 
 /**
  * Known romset names → the core that runs them best. Keys are matched against
  * the zip file name (without extension), lowercased.
  */
 const ROMSET_CORES: Record<string, CoreId[]> = {
-  // Namco System 12 / 11 — MAME-only (mame4droid heritage)
-  tektagt: ["mame2003_plus", "mame2003"],
-  tekken: ["mame2003_plus", "mame2003"],
-  tekken2: ["mame2003_plus", "mame2003"],
-  tekken3: ["mame2003_plus", "mame2003"],
-  soulclbr: ["mame2003_plus", "mame2003"],
+  // Namco System 11/12 — needs newer MAME sets first, then the 0.78 family.
+  tektagt: ["mame2010", "mame2015", "mame2016", "mame", "mame2003_plus", "mame2003"],
+  tekkentt: ["mame2010", "mame2015", "mame2016", "mame", "mame2003_plus"],
+  tekken: ["mame2003_plus", "mame2003", "mame2010", "mame"],
+  tekken2: ["mame2003_plus", "mame2003", "mame2010", "mame"],
+  tekken3: ["mame2010", "mame2015", "mame", "mame2003_plus"],
+  soulclbr: ["mame2010", "mame2015", "mame", "mame2003_plus"],
   // Capcom CPS
   dino: ["arcade", "fbalpha2012_cps1", "mame2003_plus"],
   captcomm: ["arcade", "fbalpha2012_cps1"],
@@ -70,37 +89,44 @@ const ROMSET_CORES: Record<string, CoreId[]> = {
   garou: ["arcade", "mame2003_plus"],
 };
 
-const EXT_TO_CORE: Record<string, CoreId> = {
-  zip: "mame2003_plus",
-  "7z": "mame2003_plus",
-  nes: "nes",
-  fds: "nes",
-  unf: "nes",
-  smc: "snes",
-  sfc: "snes",
-  fig: "snes",
-  swc: "snes",
-  gba: "gba",
-  gb: "gb",
-  gbc: "gb",
-  md: "segaMD",
-  gen: "segaMD",
-  smd: "segaMD",
-  bin: "psx",
-  sms: "segaMS",
-  z64: "n64",
-  n64: "n64",
-  v64: "n64",
-  cue: "psx",
-  pbp: "psx",
-  chd: "psx",
-  iso: "psx",
-  img: "psx",
-  mdf: "psx",
+const EXT_TO_CORES: Record<string, CoreId[]> = {
+  zip: ["mame2003_plus"],
+  "7z": ["mame2003_plus"],
+  nes: ["nes"],
+  fds: ["nes"],
+  unf: ["nes"],
+  smc: ["snes"],
+  sfc: ["snes"],
+  fig: ["snes"],
+  swc: ["snes"],
+  gba: ["gba"],
+  gb: ["gb"],
+  gbc: ["gb"],
+  md: ["segaMD"],
+  gen: ["segaMD"],
+  smd: ["segaMD"],
+  bin: ["psx"],
+  sms: ["segaMS"],
+  z64: ["n64"],
+  n64: ["n64"],
+  v64: ["n64"],
+  cue: ["psx"],
+  pbp: ["psx", "psp"],
+  chd: ["psx"],
+  // PSP and PS1 both ship .iso — try PS1 first, then PSP.
+  iso: ["psx", "psp"],
+  cso: ["psp"],
+  img: ["psx"],
+  mdf: ["psx"],
 };
 
 function baseName(fileName: string): string {
   return fileName.replace(/\.[^.]+$/, "").toLowerCase().trim();
+}
+
+/** PSP titles are usually named with the game title, so also honour a hint. */
+function looksLikePsp(fileName: string): boolean {
+  return /psp|ulus|uljm|ules|ucus|ucjs|npjh/i.test(fileName);
 }
 
 /**
@@ -116,16 +142,21 @@ export function coreCandidates(fileName: string): CoreId[] {
     for (const c of ARCADE_CORES) if (!ordered.includes(c)) ordered.push(c);
     return ordered;
   }
-  const single = EXT_TO_CORE[ext];
-  return single ? [single] : [];
+  const list = EXT_TO_CORES[ext];
+  if (!list) return [];
+  if (looksLikePsp(fileName) && list.includes("psp")) {
+    return ["psp", ...list.filter((c) => c !== "psp")];
+  }
+  return [...list];
 }
+
 
 export function detectCore(fileName: string): CoreId | null {
   return coreCandidates(fileName)[0] ?? null;
 }
 
 
-export const ACCEPTED_EXTENSIONS = Object.keys(EXT_TO_CORE)
+export const ACCEPTED_EXTENSIONS = Object.keys(EXT_TO_CORES)
   .map((e) => `.${e}`)
   .join(",");
 
