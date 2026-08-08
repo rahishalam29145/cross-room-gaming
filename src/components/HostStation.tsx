@@ -207,11 +207,26 @@ export default function HostStation() {
       }
 
       // Try the detected core first; if the romset isn't recognised by it,
-      // fall through the remaining candidates automatically.
-      const candidates = [core, ...coreCandidates(file.name).filter((c) => c !== core)];
+      // fall through the remaining candidates automatically. Cores whose
+      // bundles are missing on the CDN are skipped before boot so we never
+      // hit EmulatorJS's "Error downloading core" dead end.
+      const wanted = [core, ...coreCandidates(file.name).filter((c) => c !== core)];
+      const candidates: CoreId[] = [];
+      const skipped: string[] = [];
+      for (const c of wanted) {
+        if (await isCoreAvailable(c)) candidates.push(c);
+        else skipped.push(CORE_LABELS[c]);
+      }
+      if (candidates.length === 0) {
+        throw new Error(
+          `Is file ke liye koi core available nahi hai (${skipped.join(", ") || "unknown"}). ` +
+            "Kisi doosre console/romset ke saath try karein.",
+        );
+      }
+
       let canvas: HTMLCanvasElement | null = null;
-      let usedCore: CoreId = core;
-      let lastErr: unknown = null;
+      let usedCore: CoreId = candidates[0]!;
+      const failures: string[] = [];
       for (const candidate of candidates) {
         setProgress({
           label: `Core boot ho raha hai — ${CORE_LABELS[candidate]}…`,
@@ -224,10 +239,16 @@ export default function HostStation() {
           usedCore = candidate;
           break;
         } catch (err) {
-          lastErr = err;
+          failures.push(
+            `${CORE_LABELS[candidate]}: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
-      if (!canvas) throw lastErr ?? new Error("Koi bhi core is ROM ko boot nahi kar paya.");
+      if (!canvas) {
+        throw new Error(
+          ["Koi bhi core is ROM ko boot nahi kar paya.", ...failures].join("\n"),
+        );
+      }
       setCore(usedCore);
       // Browsers suspend the emulator's AudioContext until a gesture — resume it.
       resumeEmulatorAudio();
