@@ -223,7 +223,11 @@ export function waitForCanvas(container: HTMLElement, timeoutMs = 300000): Promi
         return;
       }
       const text = container.textContent ?? "";
-      if (/romset is unknown|not a valid|error loading|failed to (start|load)/i.test(text)) {
+      if (
+        /romset is unknown|not a valid|error loading|error downloading|failed to (start|load)|network error/i.test(
+          text,
+        )
+      ) {
         reject(new Error(text.trim().slice(0, 160) || "Core could not load this romset."));
         return;
       }
