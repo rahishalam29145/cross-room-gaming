@@ -119,6 +119,36 @@ export function getTappedAudioTrack(): MediaStreamTrack | null {
 let loaderPromise: Promise<void> | null = null;
 
 /**
+ * Verifies the core bundle actually exists on the CDN before booting.
+ * Without this, a missing core surfaces as EmulatorJS's opaque
+ * "Error downloading core (…-wasm.data)" overlay.
+ */
+const availability = new Map<string, boolean>();
+
+export async function isCoreAvailable(core: CoreId): Promise<boolean> {
+  const threads = typeof window !== "undefined" && window.crossOriginIsolated === true;
+  if (THREAD_ONLY_CORES.includes(core) && !threads) return false;
+  const files = CORE_FILES[core] ?? [];
+  for (const file of files) {
+    const suffix = THREAD_ONLY_CORES.includes(core) ? "-thread-wasm.data" : "-wasm.data";
+    const url = `${CDN}cores/${file}${suffix}`;
+    const cached = availability.get(url);
+    if (cached !== undefined) {
+      if (cached) return true;
+      continue;
+    }
+    try {
+      const res = await fetch(url, { method: "HEAD", cache: "force-cache" });
+      availability.set(url, res.ok);
+      if (res.ok) return true;
+    } catch {
+      availability.set(url, false);
+    }
+  }
+  return false;
+}
+
+/**
  * Loads (or reloads) the EmulatorJS bootstrap script. A fresh script element is
  * appended on every start so switching cores can re-boot cleanly.
  */
@@ -133,6 +163,7 @@ function loadLoaderScript(): Promise<void> {
   });
   return loaderPromise;
 }
+
 
 
 export interface StartEmulatorOptions {
