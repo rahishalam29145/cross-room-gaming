@@ -17,6 +17,7 @@ import { heartbeatRoom, publishRoom, removeRoom } from "@/lib/rooms";
 import { coverForGame, prettyGameName } from "@/lib/covers";
 import {
   getTappedAudioTrack,
+  isCoreAvailable,
   resumeEmulatorAudio,
   sendInputToEmulator,
   startEmulator,
@@ -207,11 +208,26 @@ export default function HostStation() {
       }
 
       // Try the detected core first; if the romset isn't recognised by it,
-      // fall through the remaining candidates automatically.
-      const candidates = [core, ...coreCandidates(file.name).filter((c) => c !== core)];
+      // fall through the remaining candidates automatically. Cores whose
+      // bundles are missing on the CDN are skipped before boot so we never
+      // hit EmulatorJS's "Error downloading core" dead end.
+      const wanted = [core, ...coreCandidates(file.name).filter((c) => c !== core)];
+      const candidates: CoreId[] = [];
+      const skipped: string[] = [];
+      for (const c of wanted) {
+        if (await isCoreAvailable(c)) candidates.push(c);
+        else skipped.push(CORE_LABELS[c]);
+      }
+      if (candidates.length === 0) {
+        throw new Error(
+          `Is file ke liye koi core available nahi hai (${skipped.join(", ") || "unknown"}). ` +
+            "Kisi doosre console/romset ke saath try karein.",
+        );
+      }
+
       let canvas: HTMLCanvasElement | null = null;
-      let usedCore: CoreId = core;
-      let lastErr: unknown = null;
+      let usedCore: CoreId = candidates[0]!;
+      const failures: string[] = [];
       for (const candidate of candidates) {
         setProgress({
           label: `Core boot ho raha hai — ${CORE_LABELS[candidate]}…`,
@@ -224,10 +240,16 @@ export default function HostStation() {
           usedCore = candidate;
           break;
         } catch (err) {
-          lastErr = err;
+          failures.push(
+            `${CORE_LABELS[candidate]}: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
-      if (!canvas) throw lastErr ?? new Error("Koi bhi core is ROM ko boot nahi kar paya.");
+      if (!canvas) {
+        throw new Error(
+          ["Koi bhi core is ROM ko boot nahi kar paya.", ...failures].join("\n"),
+        );
+      }
       setCore(usedCore);
       // Browsers suspend the emulator's AudioContext until a gesture — resume it.
       resumeEmulatorAudio();
@@ -517,7 +539,18 @@ export default function HostStation() {
 
 
 
-          {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+          {error && (
+            <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <p className="font-mono text-xs tracking-[0.25em] text-destructive">BOOT ERROR</p>
+              <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-destructive">
+                {error}
+              </pre>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Tip: arcade romsets ke liye MAME 2003 Plus (v0.78) ya FinalBurn Neo set chahiye.
+                Doosra console list se chun kar dobara "Start room" dabayein.
+              </p>
+            </div>
+          )}
         </section>
       )}
 
@@ -580,7 +613,7 @@ export default function HostStation() {
 
       <div
         ref={containerRef}
-        className={`mt-4 aspect-video w-full overflow-hidden rounded-xl border border-border bg-black ${
+        className={`mt-4 aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] ring-1 ring-primary/25 ${
           phase === "idle" ? "hidden" : ""
         }`}
       />

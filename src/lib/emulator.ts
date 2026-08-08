@@ -2,7 +2,7 @@
  * EmulatorJS bootstrap helpers. Browser-only — never import from SSR paths
  * outside a ClientOnly/lazy boundary.
  */
-import type { CoreId } from "./retro";
+import { CORE_FILES, THREAD_ONLY_CORES, type CoreId } from "./retro";
 
 const CDN = "https://cdn.emulatorjs.org/stable/data/";
 
@@ -119,6 +119,36 @@ export function getTappedAudioTrack(): MediaStreamTrack | null {
 let loaderPromise: Promise<void> | null = null;
 
 /**
+ * Verifies the core bundle actually exists on the CDN before booting.
+ * Without this, a missing core surfaces as EmulatorJS's opaque
+ * "Error downloading core (…-wasm.data)" overlay.
+ */
+const availability = new Map<string, boolean>();
+
+export async function isCoreAvailable(core: CoreId): Promise<boolean> {
+  const threads = typeof window !== "undefined" && window.crossOriginIsolated === true;
+  if (THREAD_ONLY_CORES.includes(core) && !threads) return false;
+  const files = CORE_FILES[core] ?? [];
+  for (const file of files) {
+    const suffix = THREAD_ONLY_CORES.includes(core) ? "-thread-wasm.data" : "-wasm.data";
+    const url = `${CDN}cores/${file}${suffix}`;
+    const cached = availability.get(url);
+    if (cached !== undefined) {
+      if (cached) return true;
+      continue;
+    }
+    try {
+      const res = await fetch(url, { method: "HEAD", cache: "force-cache" });
+      availability.set(url, res.ok);
+      if (res.ok) return true;
+    } catch {
+      availability.set(url, false);
+    }
+  }
+  return false;
+}
+
+/**
  * Loads (or reloads) the EmulatorJS bootstrap script. A fresh script element is
  * appended on every start so switching cores can re-boot cleanly.
  */
@@ -133,6 +163,7 @@ function loadLoaderScript(): Promise<void> {
   });
   return loaderPromise;
 }
+
 
 
 export interface StartEmulatorOptions {
@@ -192,7 +223,11 @@ export function waitForCanvas(container: HTMLElement, timeoutMs = 300000): Promi
         return;
       }
       const text = container.textContent ?? "";
-      if (/romset is unknown|not a valid|error loading|failed to (start|load)/i.test(text)) {
+      if (
+        /romset is unknown|not a valid|error loading|error downloading|failed to (start|load)|network error/i.test(
+          text,
+        )
+      ) {
         reject(new Error(text.trim().slice(0, 160) || "Core could not load this romset."));
         return;
       }
