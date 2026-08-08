@@ -197,8 +197,8 @@ export function CustomGamepad({ onButton, onAxis, disabled, psStyle = true }: Pr
 
       <div
         ref={areaRef}
-        className={`relative h-[320px] w-full touch-none overflow-hidden rounded-xl border ${
-          editing ? "border-primary/60 bg-primary/5" : "border-border bg-muted/20"
+        className={`relative h-[340px] w-full touch-none overflow-hidden rounded-2xl bg-[radial-gradient(120%_100%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent),transparent)] ring-1 backdrop-blur-sm ${
+          editing ? "ring-primary/60" : "ring-border/70"
         } ${!editing && disabled ? "opacity-40" : ""}`}
       >
         {editing && (
