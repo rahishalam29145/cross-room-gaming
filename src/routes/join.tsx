@@ -35,11 +35,13 @@ function JoinPage() {
         <p className="font-mono text-xs tracking-[0.35em] text-chart-2">PLAYER 2 — GUEST</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-foreground">Room join karein</h1>
       </header>
-      <ClientOnly fallback={<Skeleton />}>
-        <Suspense fallback={<Skeleton />}>
-          <GuestStation initialCode={code} />
-        </Suspense>
-      </ClientOnly>
+      <ErrorBoundary label="PLAYER 2 CRASHED">
+        <ClientOnly fallback={<Skeleton />}>
+          <Suspense fallback={<Skeleton />}>
+            <GuestStation initialCode={code} />
+          </Suspense>
+        </ClientOnly>
+      </ErrorBoundary>
     </main>
   );
 }
