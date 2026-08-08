@@ -238,8 +238,8 @@ export function CustomGamepad({ onButton, onAxis, disabled, psStyle = true }: Pr
                 height: btn.size,
                 transform: "translate(-50%, -50%)",
               }}
-              className={`absolute grid select-none place-items-center rounded-full border-2 bg-gradient-to-b from-white/15 to-transparent font-mono text-[13px] font-bold shadow-[0_5px_0_0_rgba(0,0,0,0.5),inset_0_2px_6px_rgba(255,255,255,0.25)] transition-[filter,transform] duration-75 ${
-                TONE[btn.name] ?? "border-border bg-secondary text-secondary-foreground"
+              className={`absolute grid select-none place-items-center rounded-full border border-white/25 bg-gradient-to-b from-white/25 via-white/5 to-black/25 font-mono text-[13px] font-bold backdrop-blur-md shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8),inset_0_2px_8px_rgba(255,255,255,0.3),inset_0_-3px_8px_rgba(0,0,0,0.45)] transition-[filter,transform] duration-75 ${
+                TONE[btn.name] ?? "bg-secondary/60 text-secondary-foreground"
               } ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${
                 editing ? "cursor-move" : "active:translate-y-[2px] active:scale-95 active:brightness-150"
               }`}
