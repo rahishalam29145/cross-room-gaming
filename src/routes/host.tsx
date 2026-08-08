@@ -33,11 +33,13 @@ function HostPage() {
         <p className="font-mono text-xs tracking-[0.35em] text-primary">PLAYER 1 — HOST</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-foreground">Room banaiye</h1>
       </header>
-      <ClientOnly fallback={<Skeleton />}>
-        <Suspense fallback={<Skeleton />}>
-          <HostStation />
-        </Suspense>
-      </ClientOnly>
+      <ErrorBoundary label="HOST CRASHED">
+        <ClientOnly fallback={<Skeleton />}>
+          <Suspense fallback={<Skeleton />}>
+            <HostStation />
+          </Suspense>
+        </ClientOnly>
+      </ErrorBoundary>
     </main>
   );
 }
