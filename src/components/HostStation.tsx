@@ -613,7 +613,7 @@ export default function HostStation() {
 
       <div
         ref={containerRef}
-        className={`mt-4 aspect-video w-full overflow-hidden rounded-xl border border-border bg-black ${
+        className={`mt-4 aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] ring-1 ring-primary/25 ${
           phase === "idle" ? "hidden" : ""
         }`}
       />
