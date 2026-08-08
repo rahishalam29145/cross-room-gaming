@@ -15,18 +15,18 @@ interface State {
  * readable debug info instead of a blank screen.
  */
 export default class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null, info: null };
+  override state: State = { error: null, info: null };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[CoOpCast] crash:", error, info.componentStack);
     this.setState({ info: info.componentStack ?? null });
   }
 
-  render() {
+  override render() {
     const { error, info } = this.state;
     if (!error) return this.props.children;
 
