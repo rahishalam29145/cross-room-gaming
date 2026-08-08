@@ -539,7 +539,18 @@ export default function HostStation() {
 
 
 
-          {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+          {error && (
+            <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <p className="font-mono text-xs tracking-[0.25em] text-destructive">BOOT ERROR</p>
+              <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-destructive">
+                {error}
+              </pre>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Tip: arcade romsets ke liye MAME 2003 Plus (v0.78) ya FinalBurn Neo set chahiye.
+                Doosra console list se chun kar dobara "Start room" dabayein.
+              </p>
+            </div>
+          )}
         </section>
       )}
 
