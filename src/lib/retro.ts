@@ -1,6 +1,12 @@
 // Shared, browser-safe constants for the retro co-op app.
 // No browser globals touched at module scope — safe to import from SSR routes.
 
+/**
+ * Only cores that actually exist on the EmulatorJS CDN are listed here.
+ * EmulatorJS resolves these ids to real `-wasm.data` bundles; anything else
+ * (mame2010 / mame2015 / mame2016 / "current mame") 404s with
+ * "Error downloading core", which is exactly the bug users hit.
+ */
 export type CoreId =
   | "nes"
   | "snes"
@@ -12,29 +18,43 @@ export type CoreId =
   | "psp"
   | "segaMS"
   | "arcade"
-  | "mame2000"
-  | "mame2003"
-  | "mame2003_plus"
-  | "mame2010"
-  | "mame2015"
-  | "mame2016"
   | "mame"
+  | "mame2003_plus"
+  | "mame2003"
   | "fbalpha2012_cps1"
   | "fbalpha2012_cps2";
 
+/** CoreId → actual core bundle names EmulatorJS will try to download. */
+export const CORE_FILES: Record<CoreId, string[]> = {
+  nes: ["fceumm"],
+  snes: ["snes9x"],
+  gba: ["mgba"],
+  gb: ["gambatte"],
+  segaMD: ["genesis_plus_gx"],
+  segaMS: ["smsplus"],
+  n64: ["mupen64plus_next"],
+  psx: ["pcsx_rearmed"],
+  psp: ["ppsspp"],
+  arcade: ["fbneo"],
+  mame: ["mame2003_plus"],
+  mame2003_plus: ["mame2003_plus"],
+  mame2003: ["mame2003"],
+  fbalpha2012_cps1: ["fbalpha2012_cps1"],
+  fbalpha2012_cps2: ["fbalpha2012_cps2"],
+};
+
+/** Cores that only ship a multi-threaded build (need cross-origin isolation). */
+export const THREAD_ONLY_CORES: CoreId[] = ["psp"];
+
 export const CORE_LABELS: Record<CoreId, string> = {
-  mame2003_plus: "Arcade — MAME 2003 Plus (v0.78, MAME4droid romsets)",
+  mame2003_plus: "Arcade — MAME 2003 Plus (v0.78 / MAME4droid romsets)",
+  mame: "Arcade — MAME (auto: 2003 Plus)",
   mame2003: "Arcade — MAME 2003 (v0.78)",
-  mame2000: "Arcade — MAME 2000 (v0.37b5, MAME4all romsets)",
-  mame2010: "Arcade — MAME 2010 (v0.139)",
-  mame2015: "Arcade — MAME 2015 (v0.160)",
-  mame2016: "Arcade — MAME 2016 (v0.174)",
-  mame: "Arcade — Current MAME (v0.2xx, latest romsets)",
   arcade: "Arcade — FinalBurn Neo (CPS1/2/3, Neo Geo, Dino)",
   fbalpha2012_cps1: "Arcade — CPS1 (FB Alpha 2012)",
   fbalpha2012_cps2: "Arcade — CPS2 (FB Alpha 2012)",
   psx: "PlayStation 1 (Tekken 3, etc.)",
-  psp: "PSP — PPSSPP (ISO/CSO)",
+  psp: "PSP — PPSSPP (threads required)",
   nes: "NES / Famicom",
   snes: "SNES",
   gba: "Game Boy Advance",
@@ -47,15 +67,10 @@ export const CORE_LABELS: Record<CoreId, string> = {
 /** Arcade cores tried in order when a romset needs a fallback. */
 export const ARCADE_CORES: CoreId[] = [
   "mame2003_plus",
-  "mame2003",
   "arcade",
   "fbalpha2012_cps2",
   "fbalpha2012_cps1",
-  "mame2010",
-  "mame2015",
-  "mame2016",
-  "mame",
-  "mame2000",
+  "mame2003",
 ];
 
 
@@ -64,13 +79,13 @@ export const ARCADE_CORES: CoreId[] = [
  * the zip file name (without extension), lowercased.
  */
 const ROMSET_CORES: Record<string, CoreId[]> = {
-  // Namco System 11/12 — needs newer MAME sets first, then the 0.78 family.
-  tektagt: ["mame2010", "mame2015", "mame2016", "mame", "mame2003_plus", "mame2003"],
-  tekkentt: ["mame2010", "mame2015", "mame2016", "mame", "mame2003_plus"],
-  tekken: ["mame2003_plus", "mame2003", "mame2010", "mame"],
-  tekken2: ["mame2003_plus", "mame2003", "mame2010", "mame"],
-  tekken3: ["mame2010", "mame2015", "mame", "mame2003_plus"],
-  soulclbr: ["mame2010", "mame2015", "mame", "mame2003_plus"],
+  // Namco System 11/12 — 0.78-era MAME/FBNeo is the only browser option.
+  tektagt: ["mame2003_plus", "arcade", "mame2003"],
+  tekkentt: ["mame2003_plus", "arcade"],
+  tekken: ["mame2003_plus", "mame2003", "arcade"],
+  tekken2: ["mame2003_plus", "mame2003", "arcade"],
+  tekken3: ["mame2003_plus", "arcade"],
+  soulclbr: ["mame2003_plus", "arcade"],
   // Capcom CPS
   dino: ["arcade", "fbalpha2012_cps1", "mame2003_plus"],
   captcomm: ["arcade", "fbalpha2012_cps1"],
@@ -119,6 +134,7 @@ const EXT_TO_CORES: Record<string, CoreId[]> = {
   img: ["psx"],
   mdf: ["psx"],
 };
+
 
 function baseName(fileName: string): string {
   return fileName.replace(/\.[^.]+$/, "").toLowerCase().trim();
