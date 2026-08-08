@@ -2,7 +2,7 @@
  * EmulatorJS bootstrap helpers. Browser-only — never import from SSR paths
  * outside a ClientOnly/lazy boundary.
  */
-import type { CoreId } from "./retro";
+import { CORE_FILES, THREAD_ONLY_CORES, type CoreId } from "./retro";
 
 const CDN = "https://cdn.emulatorjs.org/stable/data/";
 
