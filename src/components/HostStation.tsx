@@ -17,6 +17,7 @@ import { heartbeatRoom, publishRoom, removeRoom } from "@/lib/rooms";
 import { coverForGame, prettyGameName } from "@/lib/covers";
 import {
   getTappedAudioTrack,
+  isCoreAvailable,
   resumeEmulatorAudio,
   sendInputToEmulator,
   startEmulator,
