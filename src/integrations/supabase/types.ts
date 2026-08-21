@@ -20,6 +20,7 @@ export type Database = {
           core: string
           created_at: string
           game_name: string
+          host_token: string | null
           id: string
           last_seen_at: string
           p2_taken: boolean
@@ -29,6 +30,7 @@ export type Database = {
           core?: string
           created_at?: string
           game_name?: string
+          host_token?: string | null
           id?: string
           last_seen_at?: string
           p2_taken?: boolean
@@ -38,6 +40,7 @@ export type Database = {
           core?: string
           created_at?: string
           game_name?: string
+          host_token?: string | null
           id?: string
           last_seen_at?: string
           p2_taken?: boolean
@@ -49,7 +52,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      heartbeat_room: {
+        Args: { p_code: string; p_p2_taken: boolean; p_token: string }
+        Returns: undefined
+      }
+      publish_room: {
+        Args: {
+          p_code: string
+          p_core: string
+          p_game_name: string
+          p_token: string
+        }
+        Returns: undefined
+      }
+      remove_room: {
+        Args: { p_code: string; p_token: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
