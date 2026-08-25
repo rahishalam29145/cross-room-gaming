@@ -14,13 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      room_keys: {
+        Row: {
+          code: string
+          token: string
+        }
+        Insert: {
+          code: string
+          token: string
+        }
+        Update: {
+          code?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_keys_code_fkey"
+            columns: ["code"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           code: string
           core: string
           created_at: string
           game_name: string
-          host_token: string | null
           id: string
           last_seen_at: string
           p2_taken: boolean
@@ -30,7 +52,6 @@ export type Database = {
           core?: string
           created_at?: string
           game_name?: string
-          host_token?: string | null
           id?: string
           last_seen_at?: string
           p2_taken?: boolean
@@ -40,7 +61,6 @@ export type Database = {
           core?: string
           created_at?: string
           game_name?: string
-          host_token?: string | null
           id?: string
           last_seen_at?: string
           p2_taken?: boolean
