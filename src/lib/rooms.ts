@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { heartbeatRoomFn, publishRoomFn, removeRoomFn } from "./rooms.functions";
 import type { CoreId } from "./retro";
 
 export interface LobbyRoom {
