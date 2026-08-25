@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { heartbeatRoomFn, publishRoomFn, removeRoomFn } from "./rooms.functions";
 import type { CoreId } from "./retro";
 
 export interface LobbyRoom {
@@ -37,29 +38,44 @@ function hostToken(code: string): string {
   return token;
 }
 
+/**
+ * Room writes go through server functions: the token-guarded database
+ * functions are executable only by the server, never directly by browsers.
+ * Failures are non-fatal for the host flow, so they are logged, not thrown.
+ */
 export async function publishRoom(input: {
   code: string;
   gameName: string;
   core: CoreId;
 }): Promise<void> {
-  await supabase.rpc("publish_room", {
-    p_code: input.code,
-    p_game_name: input.gameName,
-    p_core: input.core,
-    p_token: hostToken(input.code),
-  });
+  try {
+    await publishRoomFn({
+      data: {
+        code: input.code,
+        gameName: input.gameName,
+        core: input.core,
+        token: hostToken(input.code),
+      },
+    });
+  } catch (err) {
+    console.warn("[rooms] publish failed:", err instanceof Error ? err.message : err);
+  }
 }
 
 export async function heartbeatRoom(code: string, p2Taken: boolean): Promise<void> {
-  await supabase.rpc("heartbeat_room", {
-    p_code: code,
-    p_token: hostToken(code),
-    p_p2_taken: p2Taken,
-  });
+  try {
+    await heartbeatRoomFn({ data: { code, token: hostToken(code), p2Taken } });
+  } catch (err) {
+    console.warn("[rooms] heartbeat failed:", err instanceof Error ? err.message : err);
+  }
 }
 
 export async function removeRoom(code: string): Promise<void> {
-  await supabase.rpc("remove_room", { p_code: code, p_token: hostToken(code) });
+  try {
+    await removeRoomFn({ data: { code, token: hostToken(code) } });
+  } catch (err) {
+    console.warn("[rooms] remove failed:", err instanceof Error ? err.message : err);
+  }
 }
 
 export async function listOpenRooms(): Promise<LobbyRoom[]> {
