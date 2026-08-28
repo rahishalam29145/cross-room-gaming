@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      games: {
+        Row: {
+          content_hash: string
+          core: string
+          cover_path: string | null
+          created_at: string
+          file_name: string
+          hidden: boolean
+          id: string
+          kind: string
+          play_count: number
+          report_count: number
+          size_bytes: number
+          storage_path: string
+          system_label: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_hash: string
+          core?: string
+          cover_path?: string | null
+          created_at?: string
+          file_name: string
+          hidden?: boolean
+          id?: string
+          kind?: string
+          play_count?: number
+          report_count?: number
+          size_bytes: number
+          storage_path: string
+          system_label?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_hash?: string
+          core?: string
+          cover_path?: string | null
+          created_at?: string
+          file_name?: string
+          hidden?: boolean
+          id?: string
+          kind?: string
+          play_count?: number
+          report_count?: number
+          size_bytes?: number
+          storage_path?: string
+          system_label?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       room_keys: {
         Row: {
           code: string
