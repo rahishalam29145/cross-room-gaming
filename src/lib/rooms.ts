@@ -8,6 +8,7 @@ export interface LobbyRoom {
   core: string;
   p2_taken: boolean;
   last_seen_at: string;
+  game_id: string | null;
 }
 
 /** Rooms older than this without a heartbeat are treated as dead. */
@@ -47,6 +48,7 @@ export async function publishRoom(input: {
   code: string;
   gameName: string;
   core: CoreId;
+  gameId?: string | null;
 }): Promise<void> {
   try {
     await publishRoomFn({
@@ -55,6 +57,7 @@ export async function publishRoom(input: {
         gameName: input.gameName,
         core: input.core,
         token: hostToken(input.code),
+        gameId: input.gameId ?? null,
       },
     });
   } catch (err) {
@@ -82,7 +85,7 @@ export async function listOpenRooms(): Promise<LobbyRoom[]> {
   const since = new Date(Date.now() - ROOM_STALE_MS).toISOString();
   const { data } = await supabase
     .from("rooms")
-    .select("code, game_name, core, p2_taken, last_seen_at")
+    .select("code, game_name, core, p2_taken, last_seen_at, game_id")
     .gte("last_seen_at", since)
     .order("last_seen_at", { ascending: false })
     .limit(50);
