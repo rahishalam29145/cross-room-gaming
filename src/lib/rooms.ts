@@ -8,6 +8,7 @@ export interface LobbyRoom {
   core: string;
   p2_taken: boolean;
   last_seen_at: string;
+  game_id: string | null;
 }
 
 /** Rooms older than this without a heartbeat are treated as dead. */
@@ -47,6 +48,7 @@ export async function publishRoom(input: {
   code: string;
   gameName: string;
   core: CoreId;
+  gameId?: string | null;
 }): Promise<void> {
   try {
     await publishRoomFn({
@@ -55,6 +57,7 @@ export async function publishRoom(input: {
         gameName: input.gameName,
         core: input.core,
         token: hostToken(input.code),
+        gameId: input.gameId ?? null,
       },
     });
   } catch (err) {
