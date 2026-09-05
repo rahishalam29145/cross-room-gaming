@@ -96,6 +96,7 @@ export type Database = {
           code: string
           core: string
           created_at: string
+          game_id: string | null
           game_name: string
           id: string
           last_seen_at: string
@@ -105,6 +106,7 @@ export type Database = {
           code: string
           core?: string
           created_at?: string
+          game_id?: string | null
           game_name?: string
           id?: string
           last_seen_at?: string
@@ -114,12 +116,21 @@ export type Database = {
           code?: string
           core?: string
           created_at?: string
+          game_id?: string | null
           game_name?: string
           id?: string
           last_seen_at?: string
           p2_taken?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rooms_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -130,15 +141,26 @@ export type Database = {
         Args: { p_code: string; p_p2_taken: boolean; p_token: string }
         Returns: undefined
       }
-      publish_room: {
-        Args: {
-          p_code: string
-          p_core: string
-          p_game_name: string
-          p_token: string
-        }
-        Returns: undefined
-      }
+      publish_room:
+        | {
+            Args: {
+              p_code: string
+              p_core: string
+              p_game_name: string
+              p_token: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_code: string
+              p_core: string
+              p_game_id?: string
+              p_game_name: string
+              p_token: string
+            }
+            Returns: undefined
+          }
       remove_room: {
         Args: { p_code: string; p_token: string }
         Returns: undefined
