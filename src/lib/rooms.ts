@@ -85,7 +85,7 @@ export async function listOpenRooms(): Promise<LobbyRoom[]> {
   const since = new Date(Date.now() - ROOM_STALE_MS).toISOString();
   const { data } = await supabase
     .from("rooms")
-    .select("code, game_name, core, p2_taken, last_seen_at")
+    .select("code, game_name, core, p2_taken, last_seen_at, game_id")
     .gte("last_seen_at", since)
     .order("last_seen_at", { ascending: false })
     .limit(50);
