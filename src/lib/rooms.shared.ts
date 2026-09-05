@@ -19,6 +19,8 @@ export const publishRoomSchema = z.object({
   gameName: z.string().trim().min(1).max(120).default("Retro game"),
   core: z.string().trim().min(1).max(40).default("nes"),
   token: hostTokenSchema,
+  /** Optional link to the shared library entry the host is running. */
+  gameId: z.string().uuid().nullish(),
 });
 
 export const heartbeatRoomSchema = z.object({

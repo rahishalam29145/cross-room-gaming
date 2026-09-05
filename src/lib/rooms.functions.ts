@@ -21,6 +21,7 @@ export const publishRoomFn = createServerFn({ method: "POST" })
       p_game_name: data.gameName,
       p_core: data.core,
       p_token: data.token,
+      p_game_id: data.gameId ?? undefined,
     });
     if (error) throw safeRoomError(error);
     return { ok: true as const };
