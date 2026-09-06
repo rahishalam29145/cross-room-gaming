@@ -37,7 +37,7 @@ import {
 
 type Phase = "idle" | "booting" | "live";
 
-export default function HostStation({ libraryGameId }: { libraryGameId?: string }) {
+export default function HostStation({ libraryGameId }: { libraryGameId?: string | undefined }) {
   const [file, setFile] = useState<File | null>(null);
   const [core, setCore] = useState<CoreId | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
