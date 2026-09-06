@@ -5,6 +5,7 @@ import heroArcade from "@/assets/hero-arcade.jpg";
 
 
 const LobbyList = lazy(() => import("@/components/LobbyList"));
+const GameLibrary = lazy(() => import("@/components/GameLibrary"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,6 +75,12 @@ function Home() {
       <ClientOnly fallback={null}>
         <Suspense fallback={null}>
           <LobbyList />
+        </Suspense>
+      </ClientOnly>
+
+      <ClientOnly fallback={null}>
+        <Suspense fallback={null}>
+          <GameLibrary />
         </Suspense>
       </ClientOnly>
 

@@ -30,6 +30,7 @@ export const Route = createFileRoute("/host")({
 });
 
 function HostPage() {
+  const { game } = Route.useSearch();
   return (
     <main>
       <header className="mx-auto w-full max-w-5xl px-4 pt-8">
@@ -39,7 +40,7 @@ function HostPage() {
       <ErrorBoundary label="HOST CRASHED">
         <ClientOnly fallback={<Skeleton />}>
           <Suspense fallback={<Skeleton />}>
-            <HostStation />
+            <HostStation libraryGameId={game || undefined} />
           </Suspense>
         </ClientOnly>
       </ErrorBoundary>
