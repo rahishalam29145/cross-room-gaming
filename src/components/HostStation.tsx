@@ -85,6 +85,42 @@ export default function HostStation({ libraryGameId }: { libraryGameId?: string 
     );
   };
 
+  // Library se aayi game (host?game=<id>) apne aap download hokar load ho jaati hai.
+  const libraryLoadedRef = useRef(false);
+  const [libraryBios, setLibraryBios] = useState<File | null>(null);
+  useEffect(() => {
+    if (!libraryGameId || libraryLoadedRef.current) return;
+    libraryLoadedRef.current = true;
+    void (async () => {
+      try {
+        const entry = await getGameFn({ data: { id: libraryGameId } });
+        if (!entry) throw new Error("Ye game library me nahi mili.");
+        const rom = await fetchGameFile(entry, (label, value) => setProgress({ label, value }));
+        try {
+          const biosList = await listGamesFn({ data: { kind: "bios" } });
+          const match = biosList.find((b) => isBiosFor(entry.core, b));
+          if (match) {
+            setLibraryBios(
+              await fetchGameFile(match, (label, value) =>
+                setProgress({ label: `BIOS — ${label}`, value }),
+              ),
+            );
+          }
+        } catch {
+          /* BIOS optional */
+        }
+        setFile(rom);
+        setCore((entry.core as CoreId) ?? detectCore(rom.name));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Library game load nahi hui.");
+      } finally {
+        setProgress(null);
+      }
+    })();
+  }, [libraryGameId]);
+
+
+
 
   const teardownPeer = useCallback(() => {
     pcRef.current?.close();
