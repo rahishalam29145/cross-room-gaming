@@ -5,6 +5,7 @@ import heroArcade from "@/assets/hero-arcade.jpg";
 
 
 const LobbyList = lazy(() => import("@/components/LobbyList"));
+const GameLibrary = lazy(() => import("@/components/GameLibrary"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,6 +53,7 @@ function Home() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             to="/host"
+            search={{ game: "" }}
             className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <Radio className="h-4 w-4" aria-hidden />
@@ -73,6 +75,12 @@ function Home() {
       <ClientOnly fallback={null}>
         <Suspense fallback={null}>
           <LobbyList />
+        </Suspense>
+      </ClientOnly>
+
+      <ClientOnly fallback={null}>
+        <Suspense fallback={null}>
+          <GameLibrary />
         </Suspense>
       </ClientOnly>
 

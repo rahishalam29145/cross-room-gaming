@@ -140,7 +140,7 @@ function RootComponent() {
               CO·OP<span className="text-foreground">CAST</span>
             </Link>
             <div className="flex gap-4 text-xs text-muted-foreground">
-              <Link to="/host" activeProps={{ className: "text-primary" }}>
+              <Link to="/host" search={{ game: "" }} activeProps={{ className: "text-primary" }}>
                 Host
               </Link>
               <Link to="/join" search={{ code: "" }} activeProps={{ className: "text-chart-2" }}>
