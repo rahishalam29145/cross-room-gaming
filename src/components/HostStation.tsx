@@ -23,6 +23,8 @@ import {
   startEmulator,
   waitForCanvas,
 } from "@/lib/emulator";
+import { getGameFn, listGamesFn } from "@/lib/games.functions";
+import { fetchGameFile, isBiosFor } from "@/lib/gameLibrary";
 
 import {
   deleteRom,
