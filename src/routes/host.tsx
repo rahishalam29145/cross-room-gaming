@@ -6,6 +6,9 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 const HostStation = lazy(() => import("@/components/HostStation"));
 
 export const Route = createFileRoute("/host")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    game: typeof search["game"] === "string" ? search["game"] : "",
+  }),
   head: () => ({
     meta: [
       { title: "Host a Room — CoOpCast Retro Co-op" },
