@@ -235,7 +235,7 @@ export default function HostStation({ libraryGameId }: { libraryGameId?: string 
       }
 
       // Optional BIOS (PS1 / Neo Geo) comes from the same IndexedDB cache.
-      let bios: File | null = null;
+      let bios: File | null = libraryBios;
       const biosMeta = savedBios.find((b) => b.id === biosId);
       if (biosMeta) {
         try {
