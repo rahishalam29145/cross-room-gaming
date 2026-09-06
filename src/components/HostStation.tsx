@@ -314,7 +314,12 @@ export default function HostStation({ libraryGameId }: { libraryGameId?: string 
       signalRef.current = createSignalChannel(roomCode, "host", (msg) => {
         void handleSignal(msg);
       });
-      void publishRoom({ code: roomCode, gameName: file.name, core: usedCore });
+      void publishRoom({
+        code: roomCode,
+        gameName: file.name,
+        core: usedCore,
+        gameId: libraryGameId ?? null,
+      });
 
       setProgress(null);
       setPhase("live");
